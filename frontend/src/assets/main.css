@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-slate-200;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-soft border border-slate-200 p-6;
+  }
+  
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-pointer border-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 active:scale-95;
+  }
+  
+  .btn-danger {
+    @apply bg-danger-600 text-white hover:bg-danger-700 active:scale-95;
+  }
+  
+  .btn-success {
+    @apply bg-success-600 text-white hover:bg-success-700 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-slate-200 text-slate-700 hover:bg-slate-300 active:scale-95;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  
+  .form-group {
+    @apply mb-4;
+  }
+  
+  .form-group label {
+    @apply block mb-1.5 font-medium text-sm text-slate-700;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    @apply w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm transition-all duration-200;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    @apply outline-none border-primary-500 ring-4 ring-primary-500/10;
+  }
+  
+  .table {
+    @apply w-full border-collapse bg-white rounded-lg overflow-hidden;
+  }
+  
+  .table th,
+  .table td {
+    @apply px-4 py-3 text-left border-b border-slate-200;
+  }
+  
+  .table th {
+    @apply bg-slate-50 font-semibold text-xs uppercase tracking-wider text-slate-600;
+  }
+  
+  .table tbody tr:hover {
+    @apply bg-slate-50;
+  }
+  
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm;
+  }
+  
+  .modal {
+    @apply bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto;
+  }
+}
+
+@media print {
+  .no-print {
+    @apply !hidden;
+  }
+}
