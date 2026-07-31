@@ -30,6 +30,7 @@ composer install
 cp .env.example .env
 # Edit .env with database credentials
 php public/index.php  # or configure nginx/apache
+php -S localhost:8080 -t public
 ```
 
 ### Frontend
