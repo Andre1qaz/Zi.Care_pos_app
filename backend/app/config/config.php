@@ -19,7 +19,7 @@ return [
         'url'               => $_ENV['ODOO_URL'] ?? 'http://127.0.0.1:8069',
         'db'                => $_ENV['ODOO_DB'] ?? 'odoo_dev',
         'username'          => $_ENV['ODOO_USERNAME'] ?? 'admin',
-        'password'          => $_ENV['ODOO_PASSWORD'] ?? 'bd59be0ccf032a159c74b21301ce9d9c8c78c6b1',
+        'password'          => $_ENV['ODOO_PASSWORD'] ?? 'c835d5ec4fad4d4006a964f1c6ee96678614d393',
         'journal_cash_code' => $_ENV['ODOO_JOURNAL_CASH_CODE'] ?? 'CSH1',
         'journal_bank_code' => $_ENV['ODOO_JOURNAL_BANK_CODE'] ?? 'BNK1',
         'enabled'           => filter_var($_ENV['ODOO_SYNC_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),
