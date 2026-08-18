@@ -92,3 +92,4 @@
 [2026-07-18T17:46:29.177264+02:00] pos.ERROR: Detail Odoo Sync Error: Gagal menghubungi server Odoo: Failed to connect to 127.0.0.1 port 8069 after 2051 ms: Couldn't connect to server (curl errno: 7) [] []
 [2026-07-20T23:46:15.339507+02:00] pos.ERROR: Detail Odoo Sync Error: Odoo Server Error [] []
 [2026-07-20T23:52:35.750626+02:00] pos.ERROR: Detail Odoo Sync Error: Odoo Server Error [] []
+[2026-08-18T09:58:00.459488+02:00] pos.ERROR: Not-Found handler is not callable or is not defined {"trace":"#0 C:\\Users\\ACER\\Documents\\Project\\Point-of-Sale-POS-System-integrated-with-Odoo-ERP\\backend\\app\\bootstrap\\Application.php(97): Phalcon\\Mvc\\Micro->handle('/')\n#1 C:\\Users\\ACER\\Documents\\Project\\Point-of-Sale-POS-System-integrated-with-Odoo-ERP\\backend\\public\\index.php(15): App\\Bootstrap\\Application->run()\n#2 {main}"} []
