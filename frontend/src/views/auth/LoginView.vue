@@ -19,7 +19,7 @@
           <label>Password</label>
           <div class="input-with-icon">
             <span class="input-icon">🔒</span>
-            <input v-model="password" type="password" required placeholder="Password" />
+            <input v-model="password" type="password" required placeholder="Admin@123" />
           </div>
         </div>
         <p v-if="error" class="error">{{ error }}</p>
@@ -56,7 +56,13 @@ async function handleLogin() {
       router.push('/dashboard')
     }
   } catch (e) {
-    error.value = e.response?.data?.message || 'Login gagal'
+    if (e.response?.data?.message) {
+      error.value = e.response.data.message
+    } else if (e.code === 'ERR_NETWORK') {
+      error.value = 'Tidak bisa terhubung ke server. Pastikan backend berjalan di port 8080.'
+    } else {
+      error.value = 'Login gagal'
+    }
   } finally {
     loading.value = false
   }

@@ -18,6 +18,8 @@ class Application
      * Prefix path yang tidak butuh autentikasi (publik).
      */
     private array $publicPrefixes = [
+        '/api/v1/auth/login',
+        '/api/v1/auth/logout',
         '/api/v1/auth',
     ];
 
@@ -28,6 +30,7 @@ class Application
         $this->app = new Micro($di);
         $this->registerMiddleware();
         $this->registerRoutes();
+        $this->registerNotFoundHandler();
         $this->registerErrorHandler();
     }
 
@@ -44,10 +47,9 @@ class Application
             $uri = $_SERVER['REQUEST_URI'] ?? '';
             $path = strtok($uri, '?');
 
-            foreach ($this->publicPrefixes as $prefix) {
-                if (str_starts_with($path, $prefix)) {
-                    return true;
-                }
+            // Skip auth for auth endpoints
+            if (str_starts_with($path, '/api/v1/auth')) {
+                return true;
             }
 
             return $authMiddleware->call($this->app);
@@ -69,6 +71,16 @@ class Application
 
             $this->app->mount($collection);
         }
+    }
+
+    private function registerNotFoundHandler(): void
+    {
+        $this->app->notFound(function () {
+            return \App\Helpers\ResponseHelper::json([
+                'success' => false,
+                'message' => 'Endpoint not found',
+            ], 404);
+        });
     }
 
     private function registerErrorHandler(): void

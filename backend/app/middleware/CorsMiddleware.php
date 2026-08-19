@@ -13,12 +13,17 @@ class CorsMiddleware implements MiddlewareInterface
     public function call(Micro $app)
     {
         $response = $app->response;
-        $response->setHeader('Access-Control-Allow-Origin', '*');
+        $origin = $app->request->getHeader('Origin') ?: '*';
+
+        $response->setHeader('Access-Control-Allow-Origin', $origin);
         $response->setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         $response->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        $response->setHeader('Access-Control-Max-Age', '86400');
 
-        if ($app->request->isOptions()) {
-            $response->setStatusCode(200);
+        if (strtoupper($app->request->getMethod()) === 'OPTIONS') {
+            $response->setStatusCode(204);
+            $response->setContent('');
+            $response->send();
             return false;
         }
 

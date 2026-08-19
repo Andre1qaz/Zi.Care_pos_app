@@ -32,7 +32,8 @@ try {
         '001_initial_schema.sql',
         '002_add_product_type.sql',
         '003_fix_service_stock.sql',
-        '004_partial_payment_system.sql'
+        '004_partial_payment_system.sql',
+        '005_fix_user_passwords.sql',
     ];
 
     foreach ($migrations as $migrationFile) {

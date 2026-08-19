@@ -10,9 +10,12 @@ INSERT INTO roles (id, name, description) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 INSERT INTO users (name, email, password, role_id) VALUES
-('Administrator', 'admin@pos.local', 'Password123', 1),
-('Manager', 'manager@pos.local', 'Password123', 2),
-('Cashier', 'cashier@pos.local', 'Password123', 3);
+('Administrator', 'admin@pos.local', '$2y$12$rY1hlx2aiWylOXtIlnYyju4LD8Rn36J4V3.09ddogAKGThMj.h.TW', 1),
+('Manager', 'manager@pos.local', '$2y$12$nksZGCHSWXtRL8JGlTMNwOovKo10g3vIrPpC5CWGDZF9Jlqy6gCsu', 2),
+('Cashier', 'cashier@pos.local', '$2y$12$z.hV7AXqU9l.B4hN1GirguYjH8bYoP3kUC3Uo5E82E0.iJ7c8rUCm', 3)
+ON DUPLICATE KEY UPDATE
+    password = VALUES(password),
+    role_id = VALUES(role_id);
 
 INSERT INTO categories (category_name, description) VALUES
 ('Makanan', 'Produk makanan'),
