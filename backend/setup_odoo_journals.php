@@ -11,7 +11,7 @@ $odooConfig = [
     'url' => 'http://localhost:8069',
     'db' => 'pos_db',
     'username' => 'andre',
-    'password' => '314b26ce38b12a37b456478179c2666c1ef72dfd',
+    'password' => '1fad75c3f8f458422e6f68573a03661991c05101',
     'use_api_key' => true,
 ];
 

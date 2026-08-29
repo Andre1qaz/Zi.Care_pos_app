@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Script untuk test sync invoice ke Odoo
- * Ini akan membuat test invoice dummy dan mencoba sync ke Odoo
+ * Script untuk test sync invoice ke Odoo dengan journal sale
+ * Ini akan menggunakan journal sale yang sudah ada untuk invoice
  */
 
-echo "=== Test Sync Invoice ke Odoo ===\n\n";
+echo "=== Test Sync Invoice ke Odoo dengan Journal Sale ===\n\n";
 
 $odooConfig = [
     'url' => 'http://localhost:8069',
@@ -69,6 +69,26 @@ if (!$uid) {
 
 echo "✓ Authentication berhasil! User ID: {$uid}\n\n";
 
+// Cek journal sale yang sudah ada
+echo "Cek journal sale yang sudah ada...\n";
+$saleJournals = jsonRpc($odooConfig['url'], 'object', 'execute_kw', [
+    $odooConfig['db'],
+    $uid,
+    $odooConfig['password'],
+    'account.journal',
+    'search',
+    [[['code', '=', 'SALE']]],
+    ['limit' => 1]
+]);
+
+if (empty($saleJournals)) {
+    echo "✗ Journal sale tidak ditemukan\n";
+    exit(1);
+}
+
+$saleJournalId = $saleJournals[0];
+echo "✓ Journal sale ditemukan (ID: {$saleJournalId})\n\n";
+
 // Test 1: Sync Customer
 echo "Test 1: Sync Customer...\n";
 try {
@@ -117,10 +137,9 @@ try {
 
 echo "\n";
 
-// Test 2: Sync Product
-echo "Test 2: Sync Product...\n";
+// Test 2: Cek product yang sudah ada
+echo "Test 2: Cek Product yang sudah ada...\n";
 try {
-    // Coba gunakan product yang sudah ada di Odoo
     $existingProducts = jsonRpc($odooConfig['url'], 'object', 'execute_kw', [
         $odooConfig['db'],
         $uid,
@@ -136,7 +155,6 @@ try {
         echo "✓ Menggunakan product yang sudah ada (ID: {$productId})\n";
     } else {
         echo "⚠ Tidak ada product yang tersedia. Perlu setup product dengan account.\n";
-        echo "Silakan setup chart of account dan product di Odoo secara manual.\n";
         exit(1);
     }
 } catch (\Exception $e) {
@@ -146,8 +164,8 @@ try {
 
 echo "\n";
 
-// Test 3: Sync Invoice
-echo "Test 3: Sync Invoice...\n";
+// Test 3: Sync Invoice dengan journal sale
+echo "Test 3: Sync Invoice dengan journal sale...\n";
 try {
     $lines = [
         [0, 0, [
@@ -162,6 +180,7 @@ try {
         'partner_id' => $partnerId,
         'invoice_date' => date('Y-m-d'),
         'ref' => 'POS TEST-' . time(),
+        'journal_id' => $saleJournalId, // Gunakan journal sale
         'invoice_line_ids' => $lines,
     ];
     
@@ -242,5 +261,4 @@ try {
 }
 
 echo "\n=== Test Sync Selesai ===\n";
-echo "✓ Semua test sync berhasil dilakukan!\n";
 echo "✓ Integrasi POS dengan Odoo sudah berfungsi dengan baik!\n";

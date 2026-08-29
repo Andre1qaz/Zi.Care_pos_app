@@ -64,11 +64,17 @@ class OdooSyncService
             }
 
             $authCredential = $this->config['api_key'] ?? $this->config['password'];
+            
+            // Get sale journal
+            $saleJournal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['code', '=', 'SALE']]], ['limit' => 1]]);
+            $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 6; // Default to journal ID 6 if not found
+            
             $moveId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
                 'move_type' => 'out_invoice',
                 'partner_id' => $partnerId,
                 'invoice_date' => date('Y-m-d', strtotime($data['invoice']['created_at'])),
                 'ref' => 'POS: ' . $data['invoice']['invoice_number'],
+                'journal_id' => $journalId,
                 'invoice_line_ids' => $lines,
             ]]]);
 

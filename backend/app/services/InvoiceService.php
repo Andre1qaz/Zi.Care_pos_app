@@ -157,18 +157,14 @@ class InvoiceService
 
         $rows = '';
         foreach ($details as $index => $item) {
-            $rowClass = $index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
             $rows .= sprintf(
-                '<tr class="%s">
-                    <td class="px-4 py-3 text-left font-medium">%s</td>
-                    <td class="px-4 py-3 text-center text-sm text-gray-500">%s</td>
-                    <td class="px-4 py-3 text-center">%d</td>
-                    <td class="px-4 py-3 text-right">%s</td>
-                    <td class="px-4 py-3 text-right text-gray-400">-</td>
-                    <td class="px-4 py-3 text-right text-gray-400">-</td>
-                    <td class="px-4 py-3 text-right font-semibold">%s</td>
+                '<tr>
+                    <td>%s</td>
+                    <td class="text-center">%s</td>
+                    <td class="text-center">%d</td>
+                    <td class="text-right">%s</td>
+                    <td class="text-right">%s</td>
                 </tr>',
-                $rowClass,
                 htmlspecialchars($item['product_name']),
                 htmlspecialchars($item['product_code'] ?? '-'),
                 $item['quantity'],
@@ -178,17 +174,33 @@ class InvoiceService
         }
 
         $statusBadge = $this->getStatusBadge($invoice['payment_status']);
+        $outstandingBalance = (float) ($invoice['outstanding_balance'] ?? 0);
+        $changeAmount = (float) ($invoice['change_amount'] ?? 0);
+
+        $outstandingRow = $outstandingBalance > 0 
+            ? '<div class="summary-row" style="color: #dc3545;">
+                <span>Sisa Pembayaran:</span>
+                <span>' . $this->formatMoney($outstandingBalance) . '</span>
+            </div>' 
+            : '';
+        
+        $changeRow = $changeAmount > 0 
+            ? '<div class="summary-row" style="color: #28a745;">
+                <span>Kembalian:</span>
+                <span>' . $this->formatMoney($changeAmount) . '</span>
+            </div>' 
+            : '';
 
         $paymentHistorySection = '';
-        if (!empty($payments) && $invoice['payment_status'] !== 'paid') {
+        if (!empty($payments)) {
             $paymentRows = '';
             foreach ($payments as $payment) {
                 $paymentRows .= sprintf(
-                    '<tr class="border-b border-gray-100">
-                        <td class="px-4 py-2 text-sm">%s</td>
-                        <td class="px-4 py-2 text-sm">%s</td>
-                        <td class="px-4 py-2 text-right font-medium">%s</td>
-                        <td class="px-4 py-2 text-sm">%s</td>
+                    '<tr>
+                        <td>%s</td>
+                        <td>%s</td>
+                        <td class="text-right">%s</td>
+                        <td>%s</td>
                     </tr>',
                     date('d M Y, H:i', strtotime($payment['payment_time'] ?? $payment['created_at'])),
                     ucfirst($payment['payment_method']),
@@ -197,21 +209,16 @@ class InvoiceService
                 );
             }
 
-            $outstandingBalance = (float) ($invoice['outstanding_balance'] ?? 0);
-            $paymentPercentage = $invoice['total_amount'] > 0 
-                ? round((($invoice['paid_amount'] / $invoice['total_amount']) * 100), 1) 
-                : 0;
-
             $paymentHistorySection = <<<HTML
-            <div class="mt-6 bg-gray-50 rounded-lg p-4">
-                <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Riwayat Pembayaran</h3>
-                <table class="w-full text-sm">
+            <div class="payment-history">
+                <h3>Riwayat Pembayaran</h3>
+                <table>
                     <thead>
-                        <tr class="text-left text-gray-500 text-xs uppercase">
-                            <th class="pb-2">Tanggal</th>
-                            <th class="pb-2">Metode</th>
-                            <th class="pb-2 text-right">Jumlah</th>
-                            <th class="pb-2">Kasir</th>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Metode</th>
+                            <th class="text-right">Jumlah</th>
+                            <th>Kasir</th>
                         </tr>
                     </thead>
                     <tbody>{$paymentRows}</tbody>
@@ -221,14 +228,121 @@ HTML;
         }
 
         $html = <<<HTML
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <div class="container">
-                {$paymentHistorySection}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {$invoice['invoice_number']}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 12px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .header-left h1 { margin: 0; color: #333; }
+        .header-left p { margin: 5px 0; color: #666; }
+        .header-right { text-align: right; }
+        .invoice-number { font-size: 24px; font-weight: bold; color: #333; }
+        .status { display: inline-block; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-partial { background: #cce5ff; color: #004085; }
+        .status-unpaid { background: #f8d7da; color: #721c24; }
+        .status-overdue { background: #f5c6cb; color: #721c24; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .info-section h3 { margin: 0 0 10px 0; font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .info-row { display: flex; margin-bottom: 8px; }
+        .info-label { width: 120px; color: #666; }
+        .info-value { font-weight: bold; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold; color: #333; }
+        td { border: 1px solid #ddd; padding: 10px; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .summary { background: #f8f9fa; padding: 15px; border-radius: 4px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .summary-row.total { font-size: 16px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px; margin-top: 10px; }
+        .payment-history { margin-top: 30px; }
+        .payment-history h3 { margin: 0 0 15px 0; font-size: 14px; color: #333; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>INVOICE</h1>
+                <p>Point of Sale System</p>
             </div>
-        </body>
-        </html>
+            <div class="header-right">
+                <div class="invoice-number">{$invoice['invoice_number']}</div>
+                <div style="margin-top: 10px;">{$statusBadge}</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-section">
+                <h3>Informasi Invoice</h3>
+                <div class="info-row">
+                    <span class="info-label">Tanggal:</span>
+                    <span class="info-value">{$this->formatDateTime($invoice['created_at'])}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Kasir:</span>
+                    <span class="info-value">{$cashier}</span>
+                </div>
+            </div>
+            <div class="info-section">
+                <h3>Informasi Pelanggan</h3>
+                <div class="info-row">
+                    <span class="info-label">Nama:</span>
+                    <span class="info-value">{$customer['customer_name']}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Telepon:</span>
+                    <span class="info-value">{$customer['phone']}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{$customer['email']}</span>
+                </div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Produk</th>
+                    <th class="text-center">Kode</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-right">Harga</th>
+                    <th class="text-right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {$rows}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <div class="summary-row">
+                <span>Total Tagihan:</span>
+                <span>{$this->formatMoney((float)$invoice['total_amount'])}</span>
+            </div>
+            <div class="summary-row">
+                <span>Total Dibayar:</span>
+                <span>{$this->formatMoney((float)$invoice['paid_amount'])}</span>
+            </div>
+            {$outstandingRow}
+            {$changeRow}
+        </div>
+
+        {$paymentHistorySection}
+
+        <div class="footer">
+            <p>Terima kasih atas transaksi Anda!</p>
+            <p>Generated on {$this->formatDateTime(date('Y-m-d H:i:s'))}</p>
+        </div>
+    </div>
+</body>
+</html>
 HTML;
 
         $dompdf = new \Dompdf\Dompdf();
@@ -242,12 +356,12 @@ HTML;
     private function getStatusBadge(string $status): string
     {
         $badges = [
-            'paid' => '<span class="status-badge status-paid">LUNAS</span>',
-            'partial' => '<span class="status-badge status-partial">SEBAGIAN</span>',
-            'unpaid' => '<span class="status-badge status-unpaid">BELUM BAYAR</span>',
-            'overdue' => '<span class="status-badge status-overdue">TERLAMBAT</span>'
+            'paid' => '<span class="status status-paid">LUNAS</span>',
+            'partial' => '<span class="status status-partial">SEBAGIAN</span>',
+            'unpaid' => '<span class="status status-unpaid">BELUM BAYAR</span>',
+            'overdue' => '<span class="status status-overdue">TERLAMBAT</span>'
         ];
-        return $badges[$status] ?? '<span class="status-badge status-unpaid">' . strtoupper($status) . '</span>';
+        return $badges[$status] ?? '<span class="status status-unpaid">' . strtoupper($status) . '</span>';
     }
 
     private function formatMoney(float $amount): string
