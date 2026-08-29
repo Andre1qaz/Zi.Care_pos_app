@@ -15,8 +15,18 @@ class AuthMiddleware implements MiddlewareInterface
     public function call(Micro $app)
     {
         $authHeader = $app->request->getHeader('Authorization');
+        $token = null;
 
-        if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
+        // Cek token dari Authorization header terlebih dahulu
+        if ($authHeader && str_starts_with($authHeader, 'Bearer ')) {
+            $token = substr($authHeader, 7);
+        } 
+        // Fallback: cek token dari query parameter (untuk download PDF dan link langsung)
+        elseif ($app->request->getQuery('token')) {
+            $token = $app->request->getQuery('token');
+        }
+
+        if (!$token) {
             $app->response->setStatusCode(401);
             $app->response->setJsonContent(['success' => false, 'message' => 'Unauthorized: Token is missing']);
             $app->response->send();
@@ -24,7 +34,6 @@ class AuthMiddleware implements MiddlewareInterface
         }
 
         try {
-            $token = substr($authHeader, 7);
             $decoded = JwtHelper::decode($token);
             
             // Konversi stdClass dari JWT ke array secara penuh

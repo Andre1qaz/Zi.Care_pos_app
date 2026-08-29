@@ -20,13 +20,12 @@
         >
           Cetak
         </button>
-        <a
-          :href="pdfUrl"
-          target="_blank"
+        <button
+          @click="downloadPdf"
           class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
         >
           Download PDF
-        </a>
+        </button>
         <router-link
           to="/invoices"
           class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
@@ -311,11 +310,27 @@ const paymentForm = ref({
   notes: ''
 })
 
-const pdfUrl = computed(() => {
-  const base = import.meta.env.VITE_API_BASE_URL || '/api/v1'
-  const token = localStorage.getItem('token')
-  return `${base}/invoices/${route.params.id}/pdf?token=${token}`
-})
+async function downloadPdf() {
+  try {
+    const response = await api.get(`/invoices/${route.params.id}/pdf`, {
+      responseType: 'blob'
+    })
+    
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `invoice-${route.params.id}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Failed to download PDF:', error)
+    alert('Gagal mendownload PDF. Silakan coba lagi.')
+  }
+}
 
 const canContinuePayment = computed(() => {
   return invoice.value && invoice.value.invoice.outstanding_balance > 0

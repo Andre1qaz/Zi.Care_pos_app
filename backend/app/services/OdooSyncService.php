@@ -63,7 +63,8 @@ class OdooSyncService
                 ]];
             }
 
-            $moveId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.move', 'create', [[
+            $authCredential = $this->config['api_key'] ?? $this->config['password'];
+            $moveId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
                 'move_type' => 'out_invoice',
                 'partner_id' => $partnerId,
                 'invoice_date' => date('Y-m-d', strtotime($data['invoice']['created_at'])),
@@ -72,7 +73,7 @@ class OdooSyncService
             ]]]);
 
             if ($moveId) {
-                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.move', 'action_post', [[(int) $moveId]]]);
+                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[(int) $moveId]]]);
 
                 $db->execute("UPDATE invoices SET sync_status = 'synced', odoo_move_id = ? WHERE id = ?", [$moveId, $invoiceId]);
 
@@ -98,6 +99,7 @@ class OdooSyncService
     public function syncCustomer(array $data): int
     {
         $uid = $this->authenticate();
+        $authCredential = $this->config['api_key'] ?? $this->config['password'];
         
         $domain = [];
         if (!empty($data['email'])) {
@@ -106,11 +108,11 @@ class OdooSyncService
             $domain[] = ['name', '=', $data['name']];
         }
 
-        $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'res.partner', 'search', [$domain], ['limit' => 1]]);
+        $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'res.partner', 'search', [$domain], ['limit' => 1]]);
 
         if (!empty($existing)) return (int) $existing[0];
 
-        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'res.partner', 'create', [[
+        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'res.partner', 'create', [[
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? '',
@@ -120,11 +122,12 @@ class OdooSyncService
     public function syncProduct(array $data): int
     {
         $uid = $this->authenticate();
-        $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'product.product', 'search', [[['default_code', '=', $data['sku']]]], ['limit' => 1]]);
+        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'search', [[['default_code', '=', $data['sku']]]], ['limit' => 1]]);
 
         if (!empty($existing)) return (int) $existing[0];
 
-        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'product.product', 'create', [[
+        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'create', [[
             'name' => $data['name'],
             'list_price' => $data['price'],
             'default_code' => $data['sku'],
@@ -136,18 +139,19 @@ class OdooSyncService
     public function syncPayment(int $moveId, float $amount, string $method): void
     {
         $uid = $this->authenticate();
+        $authCredential = $this->config['api_key'] ?? $this->config['password'];
 
         $isCash = in_array(strtolower($method), ['cash', 'tunai']);
         $journalCode = $isCash ? $this->config['journal_cash_code'] : $this->config['journal_bank_code'];
 
-        $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.journal', 'search', [[['code', '=', $journalCode]]], ['limit' => 1]]);
+        $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['code', '=', $journalCode]]], ['limit' => 1]]);
 
         if (empty($journal)) {
-            $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.journal', 'search', [[['type', 'in', ['cash', 'bank']]]], ['limit' => 1]]);
+            $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['type', 'in', ['cash', 'bank']]]], ['limit' => 1]]);
         }
         $journalId = !empty($journal) ? (int)$journal[0] : 1;
 
-        $wizardId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.payment.register', 'create', [[
+        $wizardId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.register', 'create', [[
             'amount' => $amount,
             'journal_id' => $journalId,
             'payment_date' => date('Y-m-d'),
@@ -159,15 +163,16 @@ class OdooSyncService
         ]]);
 
         if ($wizardId) {
-            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.payment.register', 'action_create_payments', [[$wizardId]]]);
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.register', 'action_create_payments', [[$wizardId]]]);
         }
     }
 
     public function syncCreditNote(int $originalMoveId, array $refundLines): void
     {
         $uid = $this->authenticate();
+        $authCredential = $this->config['api_key'] ?? $this->config['password'];
 
-        $invoice = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.move', 'read', [[$originalMoveId]], ['fields' => ['partner_id']]]);
+        $invoice = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'read', [[$originalMoveId]], ['fields' => ['partner_id']]]);
         if (empty($invoice)) return;
         $partnerId = $invoice[0]['partner_id'][0];
 
@@ -186,7 +191,7 @@ class OdooSyncService
             ]];
         }
 
-        $creditNoteId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.move', 'create', [[
+        $creditNoteId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
             'move_type' => 'out_refund',
             'partner_id' => $partnerId,
             'invoice_date' => date('Y-m-d'),
@@ -195,13 +200,15 @@ class OdooSyncService
         ]]]);
 
         if ($creditNoteId) {
-            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $this->config['password'], 'account.move', 'action_post', [[(int)$creditNoteId]]]);
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[(int)$creditNoteId]]]);
         }
     }
 
     private function authenticate(): int
     {
-        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $this->config['password'], []]);
+        // Use API key if available, otherwise fall back to password
+        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $authCredential, []]);
         if (!$uid) throw new \RuntimeException('Auth failed');
         return (int) $uid;
     }

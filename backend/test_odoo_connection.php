@@ -12,7 +12,7 @@ $odooConfig = [
     'url' => 'http://localhost:8069', // Ganti dengan URL Odoo Anda
     'db' => 'pos_db', // Database Odoo yang ditemukan
     'username' => 'andre', // User andre
-    'password' => '314b26ce38b12a37b456478179c2666c1ef72dfd', // API Key baru
+    'password' => '1fad75c3f8f458422e6f68573a03661991c05101', // API Key baru
     'use_api_key' => true, // Menggunakan API Key
 ];
 
@@ -135,7 +135,8 @@ try {
     }
 
     if ($uid) {
-        echo "✓ Authentication berhasil! User ID: {$uid}\n\n";
+        echo "✓ Authentication berhasil! User ID: {$uid}\n";
+        echo "✓ API Key yang digunakan: " . substr($odooConfig['password'], 0, 8) . "...\n\n";
     } else {
         echo "✗ Authentication gagal\n\n";
     }
