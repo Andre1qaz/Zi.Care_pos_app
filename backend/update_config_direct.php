@@ -19,7 +19,7 @@ $correctConfig = [
     'url' => 'http://localhost:8069',
     'db' => 'pos_db',
     'username' => 'andre',
-    'password' => '314b26ce38b12a37b456478179c2666c1ef72dfd',
+    'password' => 'andre123',
     'journal_cash_code' => 'CSH1',
     'journal_bank_code' => 'BNK1',
 ];
@@ -46,7 +46,7 @@ $envCorrectConfig = [
     'ODOO_URL' => 'http://localhost:8069',
     'ODOO_DB' => 'pos_db',
     'ODOO_USERNAME' => 'andre',
-    'ODOO_PASSWORD' => '314b26ce38b12a37b456478179c2666c1ef72dfd',
+    'ODOO_PASSWORD' => 'andre123',
     'ODOO_SYNC_ENABLED' => 'true',
     'ODOO_SYNC_MAX_RETRY' => '3',
     'ODOO_JOURNAL_CASH_CODE' => 'CSH1',

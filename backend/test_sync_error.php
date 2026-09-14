@@ -137,7 +137,7 @@ function jsonRpc($url, $service, $method, $params, $authCredential) {
     return $response['result'] ?? null;
 }
 
-$authCredential = $config['odoo']['api_key'] ?? $config['odoo']['password'];
+$authCredential = $config['odoo']['password'];
 
 echo "Test 1: Authenticate ke Odoo...\n";
 try {

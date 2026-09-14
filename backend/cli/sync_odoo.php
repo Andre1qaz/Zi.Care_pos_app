@@ -4,7 +4,7 @@
 /**
  * Odoo Sync Worker CLI
  * Usage: php cli/sync_odoo.php
- * Cron: */5 * * * * php /var/www/pos/backend/cli/sync_odoo.php
+ * Cron: jalankan setiap 5 menit (misal via scheduler)
  */
 
 declare(strict_types=1);

@@ -7,13 +7,25 @@
 
 echo "=== Test Koneksi Odoo ===\n\n";
 
-// Konfigurasi Odoo (sesuaikan dengan .env Anda)
+// Load environment variables
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value);
+        }
+    }
+}
+
+// Konfigurasi Odoo (diambil dari .env)
 $odooConfig = [
-    'url' => 'http://localhost:8069', // Ganti dengan URL Odoo Anda
-    'db' => 'pos_db', // Database Odoo yang ditemukan
-    'username' => 'andre', // User andre
-    'password' => '1fad75c3f8f458422e6f68573a03661991c05101', // API Key baru
-    'use_api_key' => true, // Menggunakan API Key
+    'url' => $_ENV['ODOO_URL'] ?? 'http://localhost:8069',
+    'db' => $_ENV['ODOO_DB'] ?? 'pos_db',
+    'username' => $_ENV['ODOO_USERNAME'] ?? 'andre',
+    'password' => $_ENV['ODOO_PASSWORD'] ?? '',
 ];
 
 echo "Konfigurasi Odoo:\n";
@@ -114,29 +126,18 @@ try {
 
 // Test 2: Authentication
 echo "Test 2: Mencoba authenticate ke Odoo...\n";
-echo "Metode: " . ($odooConfig['use_api_key'] ? 'API Key' : 'Password') . "\n";
+echo "Metode: Password\n";
 try {
-    if ($odooConfig['use_api_key']) {
-        // Authentication dengan API Key
-        $uid = jsonRpc($odooConfig['url'], 'common', 'authenticate', [
-            $odooConfig['db'],
-            $odooConfig['username'],
-            $odooConfig['password'], // API Key
-            []
-        ]);
-    } else {
-        // Authentication dengan password biasa
-        $uid = jsonRpc($odooConfig['url'], 'common', 'authenticate', [
-            $odooConfig['db'],
-            $odooConfig['username'],
-            $odooConfig['password'],
-            []
-        ]);
-    }
+    $uid = jsonRpc($odooConfig['url'], 'common', 'authenticate', [
+        $odooConfig['db'],
+        $odooConfig['username'],
+        $odooConfig['password'],
+        []
+    ]);
 
     if ($uid) {
         echo "✓ Authentication berhasil! User ID: {$uid}\n";
-        echo "✓ API Key yang digunakan: " . substr($odooConfig['password'], 0, 8) . "...\n\n";
+        echo "✓ User yang digunakan: {$odooConfig['username']}\n\n";
     } else {
         echo "✗ Authentication gagal\n\n";
     }
@@ -218,16 +219,12 @@ try {
 echo "=== Test Selesai ===\n";
 
 echo "\n=== Tips untuk mengatasi masalah ===\n";
-echo "1. Jika menggunakan API Key:\n";
-echo "   - Buka Odoo > Settings > Users & Companies > Users\n";
-echo "   - Pilih user admin > Action > API Keys\n";
-echo "   - Buat API Key baru dan copy key tersebut\n";
-echo "   - Set 'use_api_key' => true di konfigurasi ini\n";
-echo "   - Gunakan API Key sebagai password\n\n";
+echo "1. Pastikan server Odoo berjalan dan database PostgreSQL tersedia:\n";
+echo "   - Odoo di http://localhost:8069\n";
+echo "   - PostgreSQL di 127.0.0.1:5432 (diperlukan agar Odoo berfungsi)\n\n";
 
 echo "2. Jika menggunakan password biasa:\n";
-echo "   - Pastikan password admin benar\n";
-echo "   - Set 'use_api_key' => false di konfigurasi ini\n\n";
+echo "   - Pastikan password user benar di file backend/.env (ODOO_PASSWORD)\n\n";
 
 echo "3. Pastikan database Odoo benar:\n";
 echo "   - Cek list database di Test 1.5\n";

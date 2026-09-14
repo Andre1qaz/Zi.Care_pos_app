@@ -6,6 +6,19 @@
 
 echo "=== Cek Konfigurasi dan Test Sync Invoice ===\n\n";
 
+// Load environment variables dari .env
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    $envLines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value);
+        }
+    }
+}
+
 // Load konfigurasi dari config.php
 $configFile = __DIR__ . '/app/config/config.php';
 if (!file_exists($configFile)) {
@@ -30,7 +43,7 @@ $expectedConfig = [
     'url' => 'http://localhost:8069',
     'db' => 'pos_db',
     'username' => 'andre',
-    'password' => '314b26ce38b12a37b456478179c2666c1ef72dfd',
+    'password' => ($_ENV['ODOO_PASSWORD'] ?? ''),
 ];
 
 $configCorrect = true;
@@ -59,7 +72,7 @@ if ($configCorrect) {
     echo "ODOO_URL=http://localhost:8069\n";
     echo "ODOO_DB=pos_db\n";
     echo "ODOO_USERNAME=andre\n";
-    echo "ODOO_PASSWORD=314b26ce38b12a37b456478179c2666c1ef72dfd\n";
+    echo "ODOO_PASSWORD=isi-password-user-andre\n";
     echo "ODOO_SYNC_ENABLED=true\n\n";
     exit(1);
 }

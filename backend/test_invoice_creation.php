@@ -22,7 +22,7 @@ if (file_exists($envFile)) {
 // Load config
 $config = require __DIR__ . '/app/config/config.php';
 
-$authCredential = $config['odoo']['api_key'] ?? $config['odoo']['password'];
+$authCredential = $config['odoo']['password'];
 
 function jsonRpc($url, $service, $method, $params, $authCredential) {
     $payload = json_encode([

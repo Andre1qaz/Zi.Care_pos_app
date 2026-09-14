@@ -23,8 +23,7 @@ $odooConfig = [
     'url' => isset($_ENV['ODOO_URL']) ? $_ENV['ODOO_URL'] : 'http://localhost:8069',
     'db' => isset($_ENV['ODOO_DB']) ? $_ENV['ODOO_DB'] : 'pos_db',
     'username' => isset($_ENV['ODOO_USERNAME']) ? $_ENV['ODOO_USERNAME'] : 'andre',
-    'password' => isset($_ENV['ODOO_API_KEY']) ? $_ENV['ODOO_API_KEY'] : (isset($_ENV['ODOO_PASSWORD']) ? $_ENV['ODOO_PASSWORD'] : ''),
-    'use_api_key' => true,
+    'password' => isset($_ENV['ODOO_PASSWORD']) ? $_ENV['ODOO_PASSWORD'] : '',
 ];
 
 echo "Konfigurasi Odoo:\n";
@@ -259,31 +258,43 @@ try {
     // Test 5: Sync Invoice
     echo "Test 5: Sync Invoice...\n";
     try {
-        // Get sale journal
+        // Get sale journal (type 'sale' fallback ke code 'SALE')
         $saleJournal = jsonRpc($odooConfig['url'], 'object', 'execute_kw', [
             $odooConfig['db'],
             $uid,
             $odooConfig['password'],
             'account.journal',
             'search',
-            [[['code', '=', 'SALE']]],
+            [[['type', '=', 'sale']]],
             ['limit' => 1]
         ]);
         
         if (empty($saleJournal)) {
-            echo "⚠ Journal sale tidak ditemukan, menggunakan journal lain\n";
+            echo "⚠ Journal sale (type=sale) tidak ditemukan, mencari code SALE...\n";
             $saleJournal = jsonRpc($odooConfig['url'], 'object', 'execute_kw', [
                 $odooConfig['db'],
                 $uid,
                 $odooConfig['password'],
                 'account.journal',
                 'search',
-                [[]],
+                [[['code', '=', 'SALE']]],
+                ['limit' => 1]
+            ]);
+        }
+        if (empty($saleJournal)) {
+            echo "⚠ Journal sale tidak ditemukan, menggunakan journal sales default\n";
+            $saleJournal = jsonRpc($odooConfig['url'], 'object', 'execute_kw', [
+                $odooConfig['db'],
+                $uid,
+                $odooConfig['password'],
+                'account.journal',
+                'search',
+                [[['type', '=', 'sale']]],
                 ['limit' => 1]
             ]);
         }
         
-        $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 6;
+        $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 7;
         echo "Menggunakan journal ID: {$journalId}\n";
         
         $invoiceData = [

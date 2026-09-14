@@ -28,6 +28,12 @@ class OdooSyncService
         }
     }
 
+    public function retrySync(int $invoiceId): bool
+    {
+        if (!$this->config['enabled']) return false;
+        return $this->syncInvoice($invoiceId);
+    }
+
     public function syncInvoice(int $invoiceId): bool
     {
         $db = Di::getDefault()->getShared('db');
@@ -63,11 +69,14 @@ class OdooSyncService
                 ]];
             }
 
-            $authCredential = $this->config['api_key'] ?? $this->config['password'];
+            $authCredential = $this->config['password'];
             
-            // Get sale journal
-            $saleJournal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['code', '=', 'SALE']]], ['limit' => 1]]);
-            $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 6; // Default to journal ID 6 if not found
+            // Get sale journal (type 'sale' fallback ke code 'SALE')
+            $saleJournal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['type', '=', 'sale']]], ['limit' => 1]]);
+            if (empty($saleJournal)) {
+                $saleJournal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['code', '=', 'SALE']]], ['limit' => 1]]);
+            }
+            $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 7; // Fallback ke journal default jika tidak ditemukan
             
             $moveId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
                 'move_type' => 'out_invoice',
@@ -105,7 +114,7 @@ class OdooSyncService
     public function syncCustomer(array $data): int
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $authCredential = $this->config['password'];
         
         $domain = [];
         if (!empty($data['email'])) {
@@ -128,7 +137,7 @@ class OdooSyncService
     public function syncProduct(array $data): int
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $authCredential = $this->config['password'];
         $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'search', [[['default_code', '=', $data['sku']]]], ['limit' => 1]]);
 
         if (!empty($existing)) return (int) $existing[0];
@@ -145,7 +154,7 @@ class OdooSyncService
     public function syncPayment(int $moveId, float $amount, string $method): void
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $authCredential = $this->config['password'];
 
         $isCash = in_array(strtolower($method), ['cash', 'tunai']);
         $journalCode = $isCash ? $this->config['journal_cash_code'] : $this->config['journal_bank_code'];
@@ -176,7 +185,7 @@ class OdooSyncService
     public function syncCreditNote(int $originalMoveId, array $refundLines): void
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['api_key'] ?? $this->config['password'];
+        $authCredential = $this->config['password'];
 
         $invoice = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'read', [[$originalMoveId]], ['fields' => ['partner_id']]]);
         if (empty($invoice)) return;
@@ -212,9 +221,7 @@ class OdooSyncService
 
     private function authenticate(): int
     {
-        // Use API key if available, otherwise fall back to password
-        $authCredential = $this->config['api_key'] ?? $this->config['password'];
-        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $authCredential, []]);
+        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $this->config['password'], []]);
         if (!$uid) throw new \RuntimeException('Auth failed');
         return (int) $uid;
     }
@@ -252,7 +259,11 @@ class OdooSyncService
         }
 
         if (isset($response['error'])) {
-            throw new \RuntimeException($response['error']['message'] ?? 'Odoo returned an unspecified error');
+            $msg = $response['error']['message'] ?? 'Odoo returned an unspecified error';
+            if (!empty($response['error']['data']['message'])) {
+                $msg .= ' | ' . $response['error']['data']['message'];
+            }
+            throw new \RuntimeException($msg);
         }
 
         return $response['result'] ?? null;

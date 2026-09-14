@@ -10,8 +10,8 @@ $odooConfig = [
     'url' => 'http://localhost:8069',
     'db' => 'pos_db',
     'username' => 'andre',
-    'password' => '314b26ce38b12a37b456478179c2666c1ef72dfd',
-    'use_api_key' => true,
+    'password' => 'andre123',
+    'use_api_key' => false,
 ];
 
 function jsonRpc($url, $service, $method, $params) {
