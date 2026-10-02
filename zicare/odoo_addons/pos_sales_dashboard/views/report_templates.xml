@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_pdf_template" name="Laporan Penjualan POS PDF">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <style>
+                    body {
+                        font-family: 'Times New Roman', Times, serif;
+                        font-size: 12pt;
+                        color: #000000;
+                        margin: 30px;
+                    }
+                    h1 {
+                        font-size: 16pt;
+                        text-align: center;
+                        margin-bottom: 4px;
+                        font-weight: bold;
+                    }
+                    .subtitle {
+                        text-align: center;
+                        font-size: 11pt;
+                        margin-bottom: 20px;
+                    }
+                    .meta-table {
+                        width: 100%;
+                        margin-bottom: 16px;
+                        font-size: 11pt;
+                    }
+                    .meta-table td {
+                        padding: 2px 0;
+                    }
+                    table.data-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 10px;
+                    }
+                    table.data-table th, table.data-table td {
+                        border: 1px solid #000000;
+                        padding: 6px 8px;
+                        font-size: 11pt;
+                        text-align: left;
+                    }
+                    table.data-table th {
+                        background-color: #f0f0f0;
+                        font-weight: bold;
+                        text-align: center;
+                    }
+                    table.data-table td.number {
+                        text-align: right;
+                    }
+                    table.data-table td.center {
+                        text-align: center;
+                    }
+                    tfoot td {
+                        font-weight: bold;
+                        border-top: 2px solid #000000;
+                    }
+                    .footer-note {
+                        margin-top: 24px;
+                        font-size: 10pt;
+                        text-align: right;
+                        font-style: italic;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Laporan Penjualan POS per Kategori</h1>
+                <p class="subtitle">Data gabungan dari database POS (MariaDB) dan Odoo Accounting</p>
+
+                <table class="meta-table">
+                    <tr>
+                        <td style="width: 15%;"><strong>Periode</strong></td>
+                        <td>: <t t-esc="date_from"/> s/d <t t-esc="date_to"/></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dicetak pada</strong></td>
+                        <td>: <t t-esc="generated_at"/></td>
+                    </tr>
+                </table>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kategori</th>
+                            <th>Jumlah Item Terjual</th>
+                            <th>Total Penjualan (Rp)</th>
+                            <th>Target (Rp)</th>
+                            <th>Pencapaian (%)</th>
+                            <th>Sumber Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="categories" t-as="cat">
+                            <tr>
+                                <td class="center"><t t-esc="cat_index + 1"/></td>
+                                <td><t t-esc="cat['category_name']"/></td>
+                                <td class="number"><t t-esc="cat['total_items']"/></td>
+                                <td class="number"><t t-esc="'{:,.0f}'.format(cat['total_sales'])"/></td>
+                                <td class="number">
+                                    <t t-if="cat.get('target_amount')">
+                                        <t t-esc="'{:,.0f}'.format(cat['target_amount'])"/>
+                                    </t>
+                                    <t t-else="">—</t>
+                                </td>
+                                <td class="center">
+                                    <t t-if="cat.get('achievement_percent') is not None">
+                                        <t t-esc="cat['achievement_percent']"/>%
+                                    </t>
+                                    <t t-else="">—</t>
+                                </td>
+                                <td class="center"><t t-esc="cat['source']"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="center">TOTAL</td>
+                            <td class="number"><t t-esc="total_items_all"/></td>
+                            <td class="number"><t t-esc="'{:,.0f}'.format(total_sales_all)"/></td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <p class="footer-note">
+                    Laporan dibuat otomatis oleh modul POS Sales Dashboard
+                </p>
+            </body>
+        </html>
+    </template>
+</odoo>

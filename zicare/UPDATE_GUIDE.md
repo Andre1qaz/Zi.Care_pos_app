@@ -19,7 +19,7 @@ Cari bagian konfigurasi Odoo di file `.env` dan ganti dengan konfigurasi berikut
 ODOO_URL=http://localhost:8069
 ODOO_DB=pos_db
 ODOO_USERNAME=andre
-ODOO_PASSWORD=314b26ce38b12a37b456478179c2666c1ef72dfd
+ODOO_PASSWORD=replace-with-local-secret
 ODOO_SYNC_ENABLED=true
 ODOO_SYNC_MAX_RETRY=3
 ```
@@ -81,7 +81,7 @@ JWT_EXPIRY=28800
 ODOO_URL=http://localhost:8069
 ODOO_DB=pos_db
 ODOO_USERNAME=andre
-ODOO_PASSWORD=314b26ce38b12a37b456478179c2666c1ef72dfd
+ODOO_PASSWORD=replace-with-local-secret
 ODOO_SYNC_ENABLED=true
 ODOO_SYNC_MAX_RETRY=3
 

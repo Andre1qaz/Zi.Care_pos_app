@@ -4,6 +4,11 @@
 backend/vendor/
 backend/.env
 backend/storage/logs/*.log
+backend/public/storage/logs/*.log
+backend/test_invoice_*.pdf
+
+# Local database recovery files
+database/recovery-pos-db/
 
 # Frontend
 frontend/node_modules/

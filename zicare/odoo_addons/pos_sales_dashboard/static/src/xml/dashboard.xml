@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="pos_sales_dashboard.Dashboard" owl="1">
+        <div class="o_pos_sales_dashboard p-4">
+            <h2>Laporan Penjualan per Kategori</h2>
+            <p class="text-muted">
+                Data gabungan dari database POS (MariaDB) dan Odoo Accounting.
+                Kelola target penjualan di menu <strong>POS Dashboard &gt; Target Penjualan</strong>.
+            </p>
+
+            <div class="d-flex gap-2 mb-4 align-items-end flex-wrap">
+                <div>
+                    <label>Dari</label>
+                    <input type="date" name="dateFrom" class="form-control"
+                           t-att-value="state.dateFrom" t-on-change="onDateChange"/>
+                </div>
+                <div>
+                    <label>Sampai</label>
+                    <input type="date" name="dateTo" class="form-control"
+                           t-att-value="state.dateTo" t-on-change="onDateChange"/>
+                </div>
+                <button class="btn btn-primary" t-on-click="onFilterClick">Filter</button>
+
+                <div class="form-check ms-3">
+                    <input type="checkbox" class="form-check-input" id="autoRefreshToggle"
+                           t-att-checked="state.autoRefresh" t-on-change="onToggleAutoRefresh"/>
+                    <label class="form-check-label" for="autoRefreshToggle">
+                        Auto-refresh tiap 30 detik
+                    </label>
+                </div>
+
+                <span t-if="state.lastUpdated" class="text-muted ms-3">
+                    Terakhir update: <t t-esc="state.lastUpdated"/>
+                </span>
+
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-outline-secondary" t-on-click="onExportCsvClick">
+                        <i class="fa fa-file-text-o me-1"/> Export CSV
+                    </button>
+                    <button class="btn btn-outline-secondary" t-on-click="onExportPdfClick">
+                        <i class="fa fa-file-pdf-o me-1"/> Cetak PDF
+                    </button>
+                </div>
+            </div>
+
+            <div t-if="state.error" class="alert alert-danger" t-esc="state.error"/>
+
+            <div t-if="state.loading" class="text-muted">Memuat data...</div>
+
+            <div t-else="">
+                <div class="o_pos_dashboard_chart_wrapper" style="position: relative; height: 400px; margin-bottom: 24px;">
+                    <canvas t-ref="categoryChart"/>
+                </div>
+
+                <table class="table table-striped mt-4">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Jumlah Item Terjual</th>
+                            <th>Total Penjualan</th>
+                            <th>Target</th>
+                            <th>Pencapaian</th>
+                            <th>Sumber Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.categories" t-as="cat" t-key="cat.category_name">
+                            <td><t t-esc="cat.category_name"/></td>
+                            <td><t t-esc="cat.total_items"/></td>
+                            <td><t t-esc="cat.total_sales"/></td>
+                            <td>
+                                <t t-if="cat.target_amount">
+                                    <t t-esc="cat.target_amount"/>
+                                </t>
+                                <t t-else="">—</t>
+                            </td>
+                            <td>
+                                <span t-if="cat.achievement_percent === null or cat.achievement_percent === undefined">
+                                    —
+                                </span>
+                                <span t-else=""
+                                      t-attf-class="badge #{cat.achievement_percent >= 100 ? 'text-bg-success' : (cat.achievement_percent >= 70 ? 'text-bg-warning' : 'text-bg-danger')}">
+                                    <t t-esc="cat.achievement_percent"/>%
+                                </span>
+                            </td>
+                            <td><t t-esc="cat.source"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>

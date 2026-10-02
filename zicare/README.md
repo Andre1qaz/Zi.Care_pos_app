@@ -9,7 +9,7 @@ Aplikasi Point of Sales (POS) enterprise-ready dengan integrasi Odoo Accounting.
 | Backend | Phalcon PHP 5.x |
 | Frontend | Vue.js 3, Vue Router, Pinia, Axios |
 | Database | MariaDB 10.6+ |
-| ERP | Odoo 17 (Accounting) |
+| ERP | Odoo 19 (Accounting) |
 | API | REST JSON |
 
 ## Quick Start
@@ -23,7 +23,7 @@ python odoo-bin -r odoo -w admin --db_host=127.0.0.1 --db_port=5432
 - Composer
 - Node.js 18+
 - MariaDB 10.6+
-- Odoo 17 (optional, for ERP sync)
+- Odoo 19 (optional, for ERP sync)
 
 ### Backend
 

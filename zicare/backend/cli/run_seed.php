@@ -34,9 +34,10 @@ try {
 
     $sql = file_get_contents($seedFile);
     $sql = preg_replace('/USE\s+\w+;/', '', $sql);
+    $sql = preg_replace('/^\s*--.*$/m', '', $sql);
 
     foreach (array_filter(array_map('trim', explode(';', $sql))) as $statement) {
-        if ($statement === '' || str_starts_with($statement, '--')) {
+        if ($statement === '') {
             continue;
         }
 

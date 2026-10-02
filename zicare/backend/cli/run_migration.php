@@ -5,6 +5,9 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->safeLoad();
+
 $config = require __DIR__ . '/../app/config/config.php';
 
 try {
@@ -50,12 +53,13 @@ try {
 
         // Remove USE statement since we're already connected to the database
         $sql = preg_replace('/USE\s+\w+;/', '', $sql);
+        $sql = preg_replace('/^\s*--.*$/m', '', $sql);
 
         // Split by semicolon and execute each statement
         $statements = array_filter(array_map('trim', explode(';', $sql)));
 
         foreach ($statements as $statement) {
-            if (!empty($statement) && !str_starts_with($statement, '--')) {
+            if (!empty($statement)) {
                 echo "Executing: " . substr($statement, 0, 50) . "...\n";
                 $pdo->exec($statement);
             }

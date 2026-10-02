@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Action untuk membuka dashboard OWL -->
+    <record id="action_pos_sales_dashboard" model="ir.actions.client">
+        <field name="name">Laporan Penjualan POS</field>
+        <field name="tag">pos_sales_dashboard.dashboard</field>
+    </record>
+
+    <!-- Form konfigurasi koneksi MariaDB -->
+    <record id="view_pos_dashboard_config_form" model="ir.ui.view">
+        <field name="name">pos.dashboard.config.form</field>
+        <field name="model">pos.dashboard.config</field>
+        <field name="arch" type="xml">
+            <form string="Konfigurasi Database POS">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="db_host"/>
+                        <field name="db_port"/>
+                        <field name="db_user"/>
+                        <field name="db_password" password="True"/>
+                        <field name="db_name"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pos_dashboard_config_list" model="ir.ui.view">
+        <field name="name">pos.dashboard.config.list</field>
+        <field name="model">pos.dashboard.config</field>
+        <field name="arch" type="xml">
+            <list string="Konfigurasi Database POS">
+                <field name="name"/>
+                <field name="db_host"/>
+                <field name="db_name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pos_dashboard_config" model="ir.actions.act_window">
+        <field name="name">Konfigurasi Database POS</field>
+        <field name="res_model">pos.dashboard.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Form input target penjualan -->
+    <record id="view_pos_sales_target_form" model="ir.ui.view">
+        <field name="name">pos.sales.target.form</field>
+        <field name="model">pos.sales.target</field>
+        <field name="arch" type="xml">
+            <form string="Target Penjualan">
+                <sheet>
+                    <group>
+                        <field name="category_name" placeholder="contoh: Obat, APD, Diagnostik"/>
+                        <field name="period_start"/>
+                        <field name="period_end"/>
+                        <field name="target_amount"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pos_sales_target_list" model="ir.ui.view">
+        <field name="name">pos.sales.target.list</field>
+        <field name="model">pos.sales.target</field>
+        <field name="arch" type="xml">
+            <list string="Target Penjualan">
+                <field name="category_name"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="target_amount"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pos_sales_target" model="ir.actions.act_window">
+        <field name="name">Target Penjualan</field>
+        <field name="res_model">pos.sales.target</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_pos_sales_dashboard_root"
+              name="POS Dashboard"
+              sequence="5"/>
+
+    <menuitem id="menu_pos_sales_dashboard"
+              name="Laporan Penjualan"
+              parent="menu_pos_sales_dashboard_root"
+              action="action_pos_sales_dashboard"
+              sequence="1"/>
+
+    <menuitem id="menu_pos_sales_target"
+              name="Target Penjualan"
+              parent="menu_pos_sales_dashboard_root"
+              action="action_pos_sales_target"
+              sequence="2"/>
+
+    <menuitem id="menu_pos_dashboard_config"
+              name="Konfigurasi Database"
+              parent="menu_pos_sales_dashboard_root"
+              action="action_pos_dashboard_config"
+              sequence="3"/>
+
+</odoo>
