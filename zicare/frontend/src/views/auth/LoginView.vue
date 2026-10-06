@@ -2,8 +2,8 @@
   <div class="login-page">
     <div class="login-card card">
       <div class="login-header">
-        <div class="logo">🏪</div>
-        <h1>POS System</h1>
+        <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="logo-image" />
+        <h1>Zi.CARE POS</h1>
         <p class="subtitle">Masuk ke sistem Point of Sales</p>
       </div>
 
@@ -90,9 +90,11 @@ async function handleLogin() {
   margin-bottom: 2rem;
 }
 
-.logo {
-  font-size: 3rem;
+.logo-image {
+  height: 80px;
+  width: auto;
   margin-bottom: 0.5rem;
+  object-fit: contain;
 }
 
 .login-card h1 {
