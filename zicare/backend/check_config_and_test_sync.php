@@ -41,7 +41,7 @@ echo "Journal Bank Code: {$odooConfig['journal_bank_code']}\n\n";
 // Cek apakah konfigurasi sudah benar
 $expectedConfig = [
     'url' => 'http://localhost:8069',
-    'db' => 'pos_db',
+    'db' => 'pos_db_odoo19_copy',
     'username' => 'andre',
     'password' => ($_ENV['ODOO_PASSWORD'] ?? ''),
 ];

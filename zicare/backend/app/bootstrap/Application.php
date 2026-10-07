@@ -47,8 +47,9 @@ class Application
             $uri = $_SERVER['REQUEST_URI'] ?? '';
             $path = strtok($uri, '?');
 
-            // Skip auth for auth endpoints
-            if (str_starts_with($path, '/api/v1/auth')) {
+            // Only skip auth for truly public auth routes.
+            // /api/v1/auth/me must still require a valid token.
+            if (str_starts_with($path, '/api/v1/auth/login') || str_starts_with($path, '/api/v1/auth/logout')) {
                 return true;
             }
 

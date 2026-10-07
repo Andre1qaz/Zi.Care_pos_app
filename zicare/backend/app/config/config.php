@@ -17,7 +17,7 @@ return [
     ],
     'odoo' => [
         'url'               => $_ENV['ODOO_URL'] ?? 'http://localhost:8069',
-        'db'                => $_ENV['ODOO_DB'] ?? 'pos_db',
+        'db'                => $_ENV['ODOO_DB'] ?? 'pos_db_odoo19_copy',
         'username'          => $_ENV['ODOO_USERNAME'] ?? 'andre',
         'password'          => $_ENV['ODOO_PASSWORD'] ?? '',
         'journal_cash_code' => $_ENV['ODOO_JOURNAL_CASH_CODE'] ?? 'CSH1',
