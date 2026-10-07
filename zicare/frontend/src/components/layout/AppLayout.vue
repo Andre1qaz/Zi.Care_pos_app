@@ -3,10 +3,7 @@
     <aside class="no-print fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col shadow-xl z-40">
       <div class="border-b border-slate-700/50 bg-white/5 p-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600">
-            <span class="text-lg font-bold">🏪</span>
-          </div>
-          <h2 class="text-xl font-bold tracking-tight">POS System</h2>
+          <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-12 w-auto object-contain" />
         </div>
       </div>
       

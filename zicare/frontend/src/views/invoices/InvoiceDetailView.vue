@@ -41,9 +41,12 @@
         <div class="card">
           <div class="mb-6 border-b border-slate-200 pb-4">
             <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-xl font-bold text-slate-900">INVOICE</h2>
-                <p class="text-sm text-slate-500">{{ invoice.invoice.invoice_number }}</p>
+              <div class="flex items-center gap-4">
+                <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-12 w-auto object-contain" />
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900">INVOICE</h2>
+                  <p class="text-sm text-slate-500">{{ invoice.invoice.invoice_number }}</p>
+                </div>
               </div>
               <span
                 :class="[
