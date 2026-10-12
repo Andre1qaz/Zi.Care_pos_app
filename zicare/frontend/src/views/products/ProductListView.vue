@@ -21,13 +21,13 @@
           <input
             v-model="search"
             placeholder="Nama atau kode produk..."
-            @input="load"
+            @input="onFilterChange"
             class="w-full"
           />
         </div>
         <div class="form-group">
           <label>Kategori</label>
-          <select v-model="categoryFilter" @change="load" class="w-full">
+          <select v-model="categoryFilter" @change="onFilterChange" class="w-full">
             <option value="">Semua Kategori</option>
             <option v-for="c in store.categories" :key="c.id" :value="c.id">
               {{ c.category_name }}
@@ -117,6 +117,12 @@
         <Package class="h-12 w-12 mb-3 opacity-50" />
         <p>Tidak ada produk ditemukan</p>
       </div>
+    </div>
+
+    <div class="pagination" v-if="pagination.pages > 1">
+      <button class="btn btn-secondary" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+      <button class="btn btn-secondary" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
     </div>
 
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
@@ -213,6 +219,7 @@ const store = useProductStore()
 const search = ref('')
 const categoryFilter = ref('')
 const showForm = ref(false)
+const pagination = ref({ page: 1, limit: 20, total: 0, pages: 1 })
 const form = ref({
   product_code: '',
   product_name: '',
@@ -243,8 +250,23 @@ function onTypeChange() {
 async function load() {
   await store.fetchProducts({
     search: search.value || undefined,
-    category_id: categoryFilter.value || undefined
+    category_id: categoryFilter.value || undefined,
+    page: pagination.value.page,
+    limit: pagination.value.limit
   })
+  const total = store.total || 0
+  pagination.value.total = total
+  pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+}
+
+function onFilterChange() {
+  pagination.value.page = 1
+  load()
+}
+
+function changePage(page) {
+  pagination.value.page = page
+  load()
 }
 
 function editProduct(p) {
@@ -283,3 +305,7 @@ onMounted(async () => {
   await load()
 })
 </script>
+
+<style scoped>
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; }
+</style>

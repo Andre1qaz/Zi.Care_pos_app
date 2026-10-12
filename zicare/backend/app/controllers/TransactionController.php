@@ -39,6 +39,7 @@ class TransactionController extends BaseController
     public function show(int $id)
     {
         try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             $invoice = $this->di->getShared('invoiceService')->get($id);
             return ResponseHelper::success($invoice);
         } catch (\Throwable $e) {

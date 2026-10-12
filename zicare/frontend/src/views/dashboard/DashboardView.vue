@@ -31,7 +31,7 @@
               <DollarSign class="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p class="text-sm font-medium text-slate-500">Penjualan Hari Ini</p>
+              <p class="text-sm font-medium text-slate-500">Penjualan ({{ periodLabel }})</p>
               <p class="text-2xl font-bold text-slate-900">{{ formatCurrency(store.stats.total_sales_today) }}</p>
             </div>
           </div>
@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import Chart from 'chart.js/auto'
 import {
@@ -171,10 +171,18 @@ import {
 
 const store = useDashboardStore()
 const dateRange = ref('today')
+const periodLabel = computed(
+  () => ({ today: 'Hari Ini', week: '7 Hari Terakhir', month: '30 Hari Terakhir' })[dateRange.value] || 'Hari Ini'
+)
 const revenueChart = ref(null)
 const paymentChart = ref(null)
 let revenueChartInstance = null
 let paymentChartInstance = null
+
+onUnmounted(() => {
+  if (revenueChartInstance) revenueChartInstance.destroy()
+  if (paymentChartInstance) paymentChartInstance.destroy()
+})
 
 function formatCurrency(val) {
   return 'Rp ' + Number(val || 0).toLocaleString('id-ID')
@@ -191,7 +199,7 @@ function getPaymentBadgeClass(method) {
 }
 
 async function fetchStats() {
-  await store.fetchStats()
+  await store.fetchStats(dateRange.value)
   await nextTick()
   initCharts()
 }
@@ -213,8 +221,7 @@ function initCharts() {
           borderColor: '#2563eb',
           backgroundColor: 'rgba(37, 99, 235, 0.1)',
           fill: true,
-          tension: 0.4,
-          smooth: true
+          tension: 0.4
         }]
       },
       options: {

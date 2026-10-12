@@ -8,7 +8,7 @@
     <div class="filters card">
       <div class="filter-group">
         <label>Cari</label>
-        <input v-model="search" placeholder="Nama pelanggan..." @input="load" />
+        <input v-model="search" placeholder="Nama pelanggan..." @input="onFilterChange" />
       </div>
     </div>
     <div class="card table-container" style="margin-top: 1rem">
@@ -40,6 +40,12 @@
       </table>
     </div>
 
+    <div class="pagination" v-if="pagination.pages > 1">
+      <button class="btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+      <button class="btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+    </div>
+
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
       <div class="modal card">
         <h3>{{ form.id ? 'Edit' : 'Tambah' }} Pelanggan</h3>
@@ -68,10 +74,30 @@ const customers = ref([])
 const search = ref('')
 const showForm = ref(false)
 const form = ref({ customer_name: '', phone: '', email: '', address: '' })
+const pagination = ref({ page: 1, limit: 20, total: 0, pages: 1 })
 
 async function load() {
-  const { data } = await api.get('/customers', { params: { search: search.value } })
+  const { data } = await api.get('/customers', {
+    params: {
+      search: search.value,
+      page: pagination.value.page,
+      limit: pagination.value.limit
+    }
+  })
   customers.value = data.data
+  const total = data.meta?.total || 0
+  pagination.value.total = total
+  pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+}
+
+function onFilterChange() {
+  pagination.value.page = 1
+  load()
+}
+
+function changePage(page) {
+  pagination.value.page = page
+  load()
 }
 
 function openForm(c = null) {
@@ -143,5 +169,13 @@ onMounted(load)
   display: flex;
   gap: 0.5rem; 
   justify-content: center;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 </style>

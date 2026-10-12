@@ -10,6 +10,7 @@ class OdooSyncService
 {
     private array $config;
     private $logger;
+    private ?int $uid = null;
 
     public function __construct()
     {
@@ -229,9 +230,17 @@ class OdooSyncService
 
     private function authenticate(): int
     {
+        // Cache UID per request: one authenticate round-trip per sync operation
+        // instead of one per line/product/customer/payment.
+        if ($this->uid !== null) {
+            return $this->uid;
+        }
+
         $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $this->authCredential(), []]);
         if (!$uid) throw new \RuntimeException('Auth failed');
-        return (int) $uid;
+
+        $this->uid = (int) $uid;
+        return $this->uid;
     }
 
     /**

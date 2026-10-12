@@ -1,66 +1,96 @@
 # POS Application – Enterprise Point of Sales
 
-Aplikasi Point of Sales (POS) enterprise-ready dengan integrasi Odoo Accounting.
+Aplikasi Point of Sales (POS) enterprise-ready dengan integrasi Odoo Accounting (sinkronisasi dua arah).
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Phalcon PHP 5.x |
-| Frontend | Vue.js 3, Vue Router, Pinia, Axios |
-| Database | MariaDB 10.6+ |
-| ERP | Odoo 19 (Accounting) |
-| API | REST JSON |
+| Backend | Phalcon PHP 5.x (REST API, port default **8090**) |
+| Frontend | Vue.js 3, Vue Router, Pinia, Axios (Vite, port **5173**) |
+| Database | MariaDB 10.6+ (XAMPP/phpMyAdmin) |
+| ERP | Odoo 19 (Accounting, port **8069**) |
+
+## Prerequisites
+
+- PHP 8.1+ dengan ekstensi Phalcon
+- Composer
+- Node.js 18+
+- MariaDB 10.6+ (XAMPP)
+- Odoo 19 (opsional, untuk ERP sync)
 
 ## Quick Start
 
-python odoo-bin -r odoo -w admin --db_host=127.0.0.1 --db_port=5432
-python odoo-bin -r odoo -w admin --db_host=127.0.0.1 --db_port=5432
+### 1. Database
 
-### Prerequisites
+Jalankan seluruh migrasi berurutan, lalu seed:
 
-- PHP 8.1+ with Phalcon extension
-- Composer
-- Node.js 18+
-- MariaDB 10.6+
-- Odoo 19 (optional, for ERP sync)
+```bash
+mysql -u root -p < database/migrations/001_initial_schema.sql
+mysql -u root -p < database/migrations/002_add_product_type.sql
+mysql -u root -p < database/migrations/003_fix_service_stock.sql
+mysql -u root -p < database/migrations/004_partial_payment_system.sql
+mysql -u root -p < database/migrations/005_fix_user_passwords.sql
+mysql -u root -p < database/seeds/001_seed_data.sql   # idempoten, boleh dijalankan ulang
+```
 
-### Backend
+> Kelima file migrasi di atas adalah set lengkap di folder `database/migrations/`.
+
+### 2. Backend
 
 ```bash
 cd backend
 composer install
-cp .env.example .env
-# Edit .env with database credentials
-php public/index.php  # or configure nginx/apache
-php -S localhost:8080 -t public public/router.php
+copy .env.example .env        # Windows — lalu isi DB + JWT + kredensial Odoo
 ```
 
-### Frontend
+Jalankan dev server:
+
+```bash
+php -S localhost:8090 -t public public/router.php
+```
+
+### 3. Frontend
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env
+copy .env.example .env
 npm run dev
 ```
 
-### Database
+Frontend memakai proxy Vite ke `http://localhost:8090` (lihat `frontend/vite.config.js`).
+Buka aplikasi di `http://localhost:5173`.
 
-```bash
-mysql -u root -p < database/migrations/001_initial_schema.sql
-mysql -u root -p < database/seeds/001_seed_data.sql
-```
+### 4. Odoo custom module (opsional)
+
+Module dashboard POS ada di `odoo_addons/pos_sales_dashboard/`. Tambahkan path tersebut
+ke `addons_path` Odoo lalu instal modulnya. Kredensial koneksi MariaDB POS dikonfigurasi
+di modul (halaman *Dashboard POS*), sedangkan kredensial API Odoo untuk sinkronisasi
+dari backend POS ada di `backend/.env` (`ODOO_API_KEY` / `ODOO_PASSWORD`).
+
+## Sinkronisasi Odoo ↔ POS
+
+- POS → Odoo: setiap transaksi/invoice yang lunas otomatis dibuatkan `account.move` (out_invoice) di Odoo melalui JSON-RPC dengan API key.
+- Odoo → POS: modul `pos_sales_dashboard` membaca data penjualan dari MariaDB `pos_db` dan membandingkan dengan `account.move` Odoo. Invoice yang `sync_status = 'synced'` tidak dihitung ganda.
+- Sinkronisasi ulang manual untuk invoice pending/failed:
+  ```bash
+  cd backend
+  php cli/sync_odoo.php
+  ```
 
 ## Project Structure
 
 ```
-POS/
-├── backend/          # Phalcon PHP REST API
-├── frontend/         # Vue.js SPA
+zicare/
+├── backend/          # Phalcon PHP REST API (port 8090)
+│   ├── app/          # controllers, services, repositories, models, middleware
+│   ├── cli/          # tool maintenance: migrasi, seed, sync Odoo
+│   └── public/       # entry point + router dev server
+├── frontend/         # Vue.js SPA (port 5173)
 ├── database/         # SQL migrations & seeds
-├── odoo/             # Odoo custom module
-└── docs/             # Enterprise documentation
+├── odoo_addons/      # Modul Odoo tambahan (pos_sales_dashboard)
+└── docs/             # Dokumentasi teknis
 ```
 
 ## Documentation
@@ -74,8 +104,6 @@ POS/
 | Technical Documentation | [docs/05-technical-documentation.md](docs/05-technical-documentation.md) |
 | User Manual | [docs/06-user-manual.md](docs/06-user-manual.md) |
 | Deployment Guide | [docs/07-deployment-guide.md](docs/07-deployment-guide.md) |
-| Odoo Integration Guide | [docs/08-odoo-integration-guide.md](docs/08-odoo-integration-guide.md) |
-| Odoo Custom Module Guide | [docs/09-odoo-custom-module-guide.md](docs/09-odoo-custom-module-guide.md) |
 
 ## Default Credentials (Development)
 
@@ -88,7 +116,3 @@ POS/
 ## License
 
 Proprietary – Internal Use Only
-
-cd "C:\proyek\POS APP\backend\public"
-php -S localhost:8080
-

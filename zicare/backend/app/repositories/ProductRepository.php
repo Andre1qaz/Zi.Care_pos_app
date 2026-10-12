@@ -65,9 +65,16 @@ class ProductRepository extends BaseRepository
 
     public function decrementStock(int $productId, int $quantity): bool
     {
-        return $this->db()->execute(
+        $db = $this->db();
+
+        // Atomic guard: the WHERE clause prevents stock from going negative.
+        $db->execute(
             'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
             [$quantity, $productId, $quantity]
         );
+
+        // execute() only reports success of the statement, so verify row count
+        // to detect the case where the guard matched 0 rows (insufficient stock).
+        return $db->affectedRows() > 0;
     }
 }

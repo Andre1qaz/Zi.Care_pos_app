@@ -54,6 +54,10 @@ class PosSalesDashboardController(http.Controller):
         - invoice_details(id, invoice_id, product_id, quantity, price)
         - products(id, category_id, ...)
         - categories(id, category_name, ...)
+
+        Invoice yang sudah tersinkron ke Odoo (sync_status = 'synced')
+        TIDAK dihitung di sini, karena sudah dihitung lewat account.move
+        di Odoo. Ini mencegah penjualan dihitung dua kali.
         """
         query = """
             SELECT
@@ -66,6 +70,7 @@ class PosSalesDashboardController(http.Controller):
             LEFT JOIN categories c ON c.id = p.category_id
             WHERE i.created_at BETWEEN %s AND %s
               AND i.payment_status = 'paid'
+              AND (i.sync_status IS NULL OR i.sync_status <> 'synced')
             GROUP BY c.category_name
             ORDER BY total_sales DESC
         """

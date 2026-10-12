@@ -62,7 +62,7 @@ class ReportController extends BaseController
     public function customerTransactions()
     {
         try {
-            $this->requireRole(['administrator', 'manager']);
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             $customerId = (int) $this->request->getQuery('customer_id');
             $dateFrom = $this->request->getQuery('date_from') ?? date('Y-m-01');
             $dateTo = $this->request->getQuery('date_to') ?? date('Y-m-d');

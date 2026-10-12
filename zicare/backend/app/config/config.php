@@ -12,13 +12,14 @@ return [
         'charset'  => 'utf8mb4',
     ],
     'jwt' => [
-        'secret' => $_ENV['JWT_SECRET'] ?? 'default-secret-change-in-production',
+        // No insecure fallback: JwtHelper refuses to sign/verify when this is empty.
+        'secret' => $_ENV['JWT_SECRET'] ?? '',
         'expiry' => (int) ($_ENV['JWT_EXPIRY'] ?? 28800),
     ],
     'odoo' => [
         'url'               => $_ENV['ODOO_URL'] ?? 'http://localhost:8069',
-        'db'                => $_ENV['ODOO_DB'] ?? 'pos_db_odoo19_copy',
-        'username'          => $_ENV['ODOO_USERNAME'] ?? 'andre',
+        'db'                => $_ENV['ODOO_DB'] ?? 'odoo',
+        'username'          => $_ENV['ODOO_USERNAME'] ?? 'admin',
         'password'          => $_ENV['ODOO_PASSWORD'] ?? '',
         'api_key'           => $_ENV['ODOO_API_KEY'] ?? '',
         'journal_cash_code' => $_ENV['ODOO_JOURNAL_CASH_CODE'] ?? 'CSH1',

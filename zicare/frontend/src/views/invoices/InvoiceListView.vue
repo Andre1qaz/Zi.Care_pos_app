@@ -6,11 +6,11 @@
     <div class="filters card">
       <div class="filter-group">
         <label>Cari</label>
-        <input v-model="search" placeholder="No. invoice..." @input="load" class="form-control" />
+        <input v-model="search" placeholder="No. invoice..." @input="onFilterChange" class="form-control" />
       </div>
       <div class="filter-group">
         <label>Status</label>
-        <select v-model="statusFilter" @change="load" class="form-control">
+        <select v-model="statusFilter" @change="onFilterChange" class="form-control">
           <option value="">Semua Status</option>
           <option value="paid">Paid</option>
           <option value="pending">Pending</option>
@@ -46,6 +46,12 @@
       </div>
       <p v-if="invoices.length === 0" class="empty">Tidak ada invoice ditemukan</p>
     </div>
+
+    <div class="pagination" v-if="pagination.pages > 1">
+      <button class="btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+      <button class="btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+    </div>
   </div>
 </template>
 
@@ -56,6 +62,7 @@ import api from '@/services/api'
 const invoices = ref([])
 const search = ref('')
 const statusFilter = ref('')
+const pagination = ref({ page: 1, limit: 20, total: 0, pages: 1 })
 
 function formatCurrency(v) { return 'Rp ' + Number(v).toLocaleString('id-ID') }
 
@@ -68,10 +75,25 @@ async function load() {
   const { data } = await api.get('/invoices', {
     params: {
       search: search.value || undefined,
-      payment_status: statusFilter.value || undefined
+      payment_status: statusFilter.value || undefined,
+      page: pagination.value.page,
+      limit: pagination.value.limit
     }
   })
   invoices.value = data.data
+  const total = data.meta?.total || 0
+  pagination.value.total = total
+  pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+}
+
+function onFilterChange() {
+  pagination.value.page = 1
+  load()
+}
+
+function changePage(page) {
+  pagination.value.page = page
+  load()
 }
 
 onMounted(load)
@@ -122,4 +144,5 @@ tbody tr:hover { background-color: #f9fafb; }
 .sync-badge.failed { background: #fee2e2; color: #991b1b; }
 
 .empty { color: var(--secondary, #6b7280); text-align: center; padding: 3rem 1rem; font-size: 0.875rem; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
 </style>

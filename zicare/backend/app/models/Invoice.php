@@ -33,14 +33,14 @@ class Invoice extends Model
 
     public function beforeUpdate(): void
     {
-        // Auto-calculate outstanding balance
-        $this->outstanding_balance = $this->total_amount - $this->paid_amount;
+        // Auto-calculate outstanding balance (never negative).
+        $this->outstanding_balance = max(0, $this->total_amount - $this->paid_amount);
     }
 
     public function beforeCreate(): void
     {
-        // Auto-calculate outstanding balance
-        $this->outstanding_balance = $this->total_amount - $this->paid_amount;
+        // Auto-calculate outstanding balance (never negative).
+        $this->outstanding_balance = max(0, $this->total_amount - $this->paid_amount);
         
         // Set default due date to 7 days from now if not set
         if ($this->due_date === null) {

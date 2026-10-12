@@ -95,11 +95,21 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next('/login')
+  }
+
+  // Token can outlive the cached profile (e.g. user object missing after a
+  // partial logout); refresh it so role-based routing stays correct.
+  if (auth.isAuthenticated && !auth.user) {
+    try {
+      await auth.fetchMe()
+    } catch (e) {
+      return next('/login')
+    }
   }
 
   if (to.meta.guest && auth.isAuthenticated) {
@@ -107,7 +117,10 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.roles && auth.userRole && !to.meta.roles.includes(auth.userRole)) {
-    return next('/transactions')
+    // Redirect to a route the role is actually allowed to open
+    // (prevents bouncing a manager onto a cashier-only page = infinite loop).
+    const fallback = auth.userRole === 'cashier' ? '/transactions' : '/dashboard'
+    return next(fallback)
   }
 
   next()

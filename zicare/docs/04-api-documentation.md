@@ -1,6 +1,6 @@
 # API Documentation
 
-Base URL: `http://localhost:8080/api/v1`
+Base URL: `http://localhost:8090/api/v1`
 
 ## Authentication
 
@@ -292,5 +292,5 @@ Role IDs: 1=administrator, 2=manager, 3=cashier
 Import file: `docs/postman/POS-API.postman_collection.json` (create if needed)
 
 Environment variables:
-- `base_url`: http://localhost:8080/api/v1
+- `base_url`: http://localhost:8090/api/v1
 - `token`: (set after login)

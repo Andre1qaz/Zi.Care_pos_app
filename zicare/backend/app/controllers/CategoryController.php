@@ -11,6 +11,7 @@ class CategoryController extends BaseController
     public function index()
     {
         try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             $categories = $this->di->getShared('categoryService')->list();
             return ResponseHelper::success($categories);
         } catch (\Throwable $e) {
@@ -21,6 +22,7 @@ class CategoryController extends BaseController
     public function show(int $id)
     {
         try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             return ResponseHelper::success($this->di->getShared('categoryService')->get($id));
         } catch (\Throwable $e) {
             return $this->handleException($e);

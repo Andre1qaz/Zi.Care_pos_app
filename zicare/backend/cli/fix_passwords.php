@@ -18,19 +18,19 @@ $defaultUsers = [
     [
         'name'     => 'Administrator',
         'email'    => 'admin@pos.local',
-        'password' => 'Password123',
+        'password' => 'Admin@123',
         'role_id'  => 1,
     ],
     [
         'name'     => 'Manager',
         'email'    => 'manager@pos.local',
-        'password' => 'Password123',
+        'password' => 'Manager@123',
         'role_id'  => 2,
     ],
     [
         'name'     => 'Cashier',
         'email'    => 'cashier@pos.local',
-        'password' => 'Password123',
+        'password' => 'Cashier@123',
         'role_id'  => 3,
     ],
 ];
@@ -83,9 +83,9 @@ try {
     }
 
     echo "\nDefault credentials:\n";
-    echo "  admin@pos.local   / Password123\n";
-    echo "  manager@pos.local / Password123\n";
-    echo "  cashier@pos.local / Password123\n";
+    echo "  admin@pos.local   / Admin@123\n";
+    echo "  manager@pos.local / Manager@123\n";
+    echo "  cashier@pos.local / Cashier@123\n";
 } catch (PDOException $e) {
     echo 'Failed: ' . $e->getMessage() . PHP_EOL;
     exit(1);

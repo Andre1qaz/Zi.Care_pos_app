@@ -8,19 +8,15 @@ use App\Helpers\ResponseHelper;
 
 class DashboardController extends BaseController
 {
-    public function indexAction()
+    public function index()
     {
         try {
             $this->requireRole(['administrator', 'manager']);
-            $stats = $this->di->getShared('dashboardService')->getStats();
+            $range = $this->request->getQuery('range', 'string', 'today');
+            $stats = $this->di->getShared('dashboardService')->getStats($range);
             return ResponseHelper::success($stats);
         } catch (\Throwable $e) {
             return $this->handleException($e);
         }
-    }
-
-    public function index()
-    {
-        return $this->indexAction();
     }
 }

@@ -14,15 +14,6 @@ class Application
 {
     private Micro $app;
 
-    /**
-     * Prefix path yang tidak butuh autentikasi (publik).
-     */
-    private array $publicPrefixes = [
-        '/api/v1/auth/login',
-        '/api/v1/auth/logout',
-        '/api/v1/auth',
-    ];
-
     public function __construct()
     {
         $di = new Di();
@@ -41,6 +32,12 @@ class Application
 
         $this->app->before(function () use ($corsMiddleware) {
             return $corsMiddleware->call($this->app);
+        });
+
+        // Re-apply CORS headers after routing: controllers return fresh Response
+        // objects, so shared-response headers would otherwise be dropped.
+        $this->app->after(function () use ($corsMiddleware) {
+            $corsMiddleware->applyToResponse($this->app);
         });
 
         $this->app->before(function () use ($authMiddleware) {
@@ -94,7 +91,8 @@ class Application
                 ? $exception->getStatusCode()
                 : 500;
 
-            $message = $_ENV['APP_DEBUG'] === 'true'
+            $debug = filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $message = $debug
                 ? $exception->getMessage()
                 : 'Internal server error';
 

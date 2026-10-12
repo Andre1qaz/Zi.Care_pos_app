@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_pos_dashboard_config_user,pos.dashboard.config.user,model_pos_dashboard_config,base.group_user,1,1,1,1
+access_pos_dashboard_config_read,pos.dashboard.config.read,model_pos_dashboard_config,base.group_user,1,0,0,0
+access_pos_dashboard_config_admin,pos.dashboard.config.admin,model_pos_dashboard_config,base.group_system,1,1,1,1
 access_pos_sales_target_user,pos.sales.target.user,model_pos_sales_target,base.group_user,1,1,1,1

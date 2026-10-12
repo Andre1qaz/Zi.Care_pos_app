@@ -28,16 +28,14 @@ class AuthService
             throw new AppException('Invalid email or password', 401);
         }
 
-        // Modifikasi: Tambahkan pengecekan jika password di database masih berupa teks biasa (plaintext)
-        $isPasswordValid = false;
-        if (password_verify($password, $user->password)) {
-            $isPasswordValid = true;
-        } elseif ($password === $user->password) {
-            $isPasswordValid = true;
+        if (!password_verify($password, $user->password)) {
+            throw new AppException('Invalid email or password', 401);
         }
 
-        if (!$isPasswordValid) {
-            throw new AppException('Invalid email or password', 401);
+        // Upgrade legacy/weak hashes transparently on successful login.
+        if (password_needs_rehash($user->password, PASSWORD_BCRYPT, ['cost' => 12])) {
+            $user->password = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $user->save();
         }
 
         $role = Role::findFirst($user->role_id);

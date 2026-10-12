@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Aplikasi POS ini dirancang dengan **Clean Architecture** dan **Layered Architecture** untuk memisahkan concern bisnis, infrastruktur, dan presentasi. Integrasi Odoo Accounting dilakukan secara asynchronous melalui queue-based sync untuk memastikan transaksi POS tetap cepat meskipun Odoo sementara tidak tersedia.
+Aplikasi POS ini dirancang dengan **Clean Architecture** dan **Layered Architecture** untuk memisahkan concern bisnis, infrastruktur, dan presentasi. Integrasi Odoo Accounting berjalan sinkron pada saat invoice dilunasi, dengan status `sync_status` (`pending`/`synced`/`failed`) sebagai pengaman: transaksi POS tetap tercatat lokal walaupun Odoo sedang tidak tersedia, dan invoice yang gagal dapat diproses ulang melalui worker CLI `php cli/sync_odoo.php`.
 
 ---
 
@@ -21,12 +21,11 @@ flowchart TB
     end
 
     subgraph Data["Data Layer"]
-        MariaDB["MariaDB"]
-        Redis["Redis Queue/Cache"]
+        MariaDB["MariaDB (pos_db)"]
     end
 
     subgraph ERP["ERP Layer"]
-        OdooAPI["Odoo JSON-RPC / REST"]
+        OdooAPI["Odoo JSON-RPC (8069)"]
         OdooDB["PostgreSQL Odoo"]
     end
 
@@ -34,8 +33,7 @@ flowchart TB
     VueSPA -->|HTTPS REST JSON| Nginx
     Nginx --> Phalcon
     Phalcon --> MariaDB
-    Phalcon --> Redis
-    Phalcon -->|Async Sync| OdooAPI
+    Phalcon -->|"Sync account.move (API key)"| OdooAPI
     OdooAPI --> OdooDB
 ```
 
@@ -46,8 +44,7 @@ flowchart TB
 | Phalcon PHP | C-extension, performa tinggi untuk transaksi real-time POS |
 | Vue.js SPA | Reactive UI, ecosystem matang (Pinia, Router) |
 | MariaDB | ACID compliance, kompatibel MySQL, cocok untuk transaksi |
-| Async Odoo Sync | POS tidak blocking saat Odoo down; retry otomatis |
-| Redis Queue | Job queue ringan untuk sync invoice/payment |
+| Odoo Sync + retry | Transaksi POS tidak blocking saat Odoo down; invoice `failed` diproses ulang via `cli/sync_odoo.php` |
 
 ---
 
@@ -62,7 +59,6 @@ flowchart LR
 
     subgraph Application
         Services["Services"]
-        Validators["Validators"]
     end
 
     subgraph Domain
@@ -92,7 +88,7 @@ flowchart LR
 | Layer | Folder | Tanggung Jawab |
 |-------|--------|----------------|
 | Presentation | `controllers/`, `middleware/` | HTTP request/response, auth gate |
-| Application | `services/`, `validators/` | Business logic, orchestration |
+| Application | `services/` | Business logic, orchestration, validasi input inline |
 | Domain | `models/`, `repositories/` | Data access abstraction |
 | Infrastructure | `config/`, `helpers/` | External systems, logging |
 
@@ -189,32 +185,28 @@ erDiagram
 ```mermaid
 sequenceDiagram
     participant POS as POS Backend
-    participant Queue as Sync Queue
-    participant Worker as Sync Worker
+    participant Worker as Retry Worker (cli/sync_odoo.php)
     participant Odoo as Odoo ERP
 
     POS->>POS: Complete Transaction
-    POS->>POS: Create Invoice (local)
-    POS->>Queue: Enqueue sync job
-    POS-->>Client: Return invoice (immediate)
-
-    Worker->>Queue: Dequeue job
-    Worker->>Odoo: POST account.move (invoice)
-    Odoo-->>Worker: move_id
-    Worker->>Odoo: POST account.payment
-    Odoo-->>Worker: payment_id
-    Worker->>POS: Update sync_status = synced
+    POS->>POS: Create Invoice (local, sync_status=pending)
+    POS->>Odoo: POST account.move (invoice) via JSON-RPC
+    Odoo-->>POS: move_id
+    POS->>Odoo: POST account.payment
+    Odoo-->>POS: payment_id
+    POS->>POS: Update sync_status = synced
+    Note over POS: Jika Odoo gagal → sync_status = failed, invoice tetap tersimpan
+    POS->>Worker: Proses ulang invoice pending/failed (cron)
+    Worker->>Odoo: Retry sync
 ```
 
 ### Sync Strategy
 
 | Status | Meaning |
 |--------|---------|
-| `pending` | Belum dikirim ke Odoo |
-| `syncing` | Sedang proses sync |
-| `synced` | Berhasil di Odoo |
-| `failed` | Gagal, akan retry |
-| `manual_review` | Gagal setelah max retry |
+| `pending` | Belum dikirim ke Odoo (atau belum selesai) |
+| `synced` | Berhasil dibuat di Odoo (`odoo_move_id` terisi) |
+| `failed` | Gagal; bisa diproses ulang via `php cli/sync_odoo.php` |
 
 ---
 
@@ -247,7 +239,6 @@ flowchart TB
         Vue["Vue Static Files"]
         DB["MariaDB Primary"]
         DBR["MariaDB Replica"]
-        RedisP["Redis"]
         OdooS["Odoo Server"]
     end
 
@@ -258,9 +249,8 @@ flowchart TB
     App1 --> DB
     App2 --> DB
     DB --> DBR
-    App1 --> RedisP
-    App2 --> RedisP
     App1 --> OdooS
+    App2 --> OdooS
 ```
 
 ---
@@ -335,6 +325,5 @@ flowchart LR
 
 1. **Horizontal scaling** – Stateless API behind load balancer
 2. **Read replica** – Reports query replica DB
-3. **Caching** – Product catalog cached in Redis (TTL 5 min)
-4. **Async sync** – Odoo integration tidak blocking checkout
-5. **Indexed queries** – Composite index on `invoices(created_at, payment_status)`
+3. **Indexed queries** – Composite index on `invoices(created_at, payment_status)`
+4. **Retry worker** – Invoice `pending`/`failed` diproses ulang via `cli/sync_odoo.php`

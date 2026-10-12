@@ -6,8 +6,7 @@ tersinkron di Odoo Accounting.
 
 ## 1. Instalasi
 
-1. Copy folder `pos_sales_dashboard` ke folder addons custom Odoo kamu,
-   sejajar dengan `pos_integration_manager`, misalnya:
+1. Copy folder `pos_sales_dashboard` ke folder addons custom Odoo kamu, misalnya:
    ```
    C:\odoo19\custom-addons\pos_sales_dashboard
    ```
@@ -32,12 +31,12 @@ global Odoo, tapi struktur view Settings beda-beda tiap versi Odoo dan
 menyebabkan ParseError saat install. Sekarang dipindah ke halaman
 konfigurasi sendiri yang lebih stabil.)
 
-## 3. Sesuaikan query dengan skema tabel asli
+## 3. Query sudah sesuai skema tabel
 
-Query di `controllers/main.py` method `_fetch_external_sales_by_category`
-memakai asumsi nama tabel: `transactions`, `transaction_items`,
-`products`, `categories`. Sesuaikan nama tabel/kolom dengan skema MariaDB
-project KP kamu yang sebenarnya.
+Query di `controllers/main.py` method `_fetch_external_sales_by_category` membaca
+tabel asli `invoices`, `invoice_details`, `products`, dan `categories` dari MariaDB
+`pos_db`. Invoice yang sudah tersinkron ke Odoo (`sync_status = 'synced'`) dikecualikan
+agar tidak dihitung ganda terhadap data `account.move` Odoo.
 
 ## 4. Akses dashboard
 

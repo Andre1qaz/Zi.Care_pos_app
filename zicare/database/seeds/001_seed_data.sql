@@ -17,19 +17,34 @@ ON DUPLICATE KEY UPDATE
     password = VALUES(password),
     role_id = VALUES(role_id);
 
-INSERT INTO categories (category_name, description) VALUES
-('Makanan', 'Produk makanan'),
-('Minuman', 'Produk minuman'),
-('Snack', 'Camilan dan snack');
+INSERT INTO categories (id, category_name, description) VALUES
+(1, 'Makanan', 'Produk makanan'),
+(2, 'Minuman', 'Produk minuman'),
+(3, 'Snack', 'Camilan dan snack')
+ON DUPLICATE KEY UPDATE
+    category_name = VALUES(category_name),
+    description = VALUES(description);
 
 INSERT INTO products (product_code, product_name, description, price, stock, category_id) VALUES
 ('PRD-001', 'Nasi Goreng Spesial', 'Nasi goreng dengan telur dan ayam', 25000.00, 100, 1),
 ('PRD-002', 'Mie Ayam', 'Mie ayam homemade', 18000.00, 80, 1),
 ('PRD-003', 'Es Teh Manis', 'Teh manis dingin', 5000.00, 200, 2),
 ('PRD-004', 'Kopi Susu', 'Kopi dengan susu segar', 15000.00, 150, 2),
-('PRD-005', 'Keripik Kentang', 'Keripik kentang original', 12000.00, 50, 3);
+('PRD-005', 'Keripik Kentang', 'Keripik kentang original', 12000.00, 50, 3)
+ON DUPLICATE KEY UPDATE
+    product_name = VALUES(product_name),
+    description = VALUES(description),
+    price = VALUES(price),
+    stock = VALUES(stock),
+    category_id = VALUES(category_id);
 
-INSERT INTO customers (customer_name, phone, email, address) VALUES
-('Walk-in Customer', NULL, NULL, NULL),
-('Budi Santoso', '081234567890', 'budi@email.com', 'Jl. Merdeka No. 10, Jakarta'),
-('Siti Aminah', '081987654321', 'siti@email.com', 'Jl. Sudirman No. 5, Bandung');
+-- customers has no unique key, so guard each row explicitly to stay idempotent.
+INSERT INTO customers (id, customer_name, phone, email, address)
+SELECT 1, 'Walk-in Customer', NULL, NULL, NULL
+WHERE NOT EXISTS (SELECT 1 FROM customers WHERE customer_name = 'Walk-in Customer' AND email IS NULL)
+UNION ALL
+SELECT 2, 'Budi Santoso', '081234567890', 'budi@email.com', 'Jl. Merdeka No. 10, Jakarta'
+WHERE NOT EXISTS (SELECT 1 FROM customers WHERE email = 'budi@email.com')
+UNION ALL
+SELECT 3, 'Siti Aminah', '081987654321', 'siti@email.com', 'Jl. Sudirman No. 5, Bandung'
+WHERE NOT EXISTS (SELECT 1 FROM customers WHERE email = 'siti@email.com');

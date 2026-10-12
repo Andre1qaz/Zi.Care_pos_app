@@ -193,10 +193,11 @@ erDiagram
 - `cash`, `qris`, `transfer`, `ewallet`
 
 ### invoices.payment_status
-- `pending`, `paid`, `partial`, `failed`, `cancelled`
+- `unpaid`, `partial`, `paid`, `overdue`, `cancelled`
 
 ### invoices.sync_status
-- `pending`, `syncing`, `synced`, `failed`, `manual_review`
+- Enum DB: `pending`, `syncing`, `synced`, `failed`, `manual_review`
+- Implementasi saat ini hanya memakai `pending`, `synced`, dan `failed` (lihat `OdooSyncService`).
 
 ### payments.payment_status
 - `pending`, `paid`, `failed`, `cancelled`
@@ -208,8 +209,10 @@ erDiagram
 | File | Description |
 |------|-------------|
 | `001_initial_schema.sql` | Create all tables |
-| `002_add_indexes.sql` | Performance indexes |
-| `003_odoo_sync_logs.sql` | Sync logging table |
+| `002_add_product_type.sql` | Kolom `product_type` & `service_status` pada produk |
+| `003_fix_service_stock.sql` | Perbaikan stok/status untuk produk jasa |
+| `004_partial_payment_system.sql` | Kolom pembayaran parsial + status `unpaid/overdue` |
+| `005_fix_user_passwords.sql` | Normalisasi hash password user |
 
 See `database/migrations/` for executable SQL.
 

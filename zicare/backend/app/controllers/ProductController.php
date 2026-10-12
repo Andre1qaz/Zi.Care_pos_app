@@ -11,6 +11,7 @@ class ProductController extends BaseController
     public function index()
     {
         try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             $filters = [
                 'search'      => $this->request->getQuery('search'),
                 'category_id' => $this->request->getQuery('category_id'),
@@ -33,6 +34,7 @@ class ProductController extends BaseController
     public function show(int $id)
     {
         try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
             $product = $this->di->getShared('productService')->get($id);
             return ResponseHelper::success($product);
         } catch (\Throwable $e) {

@@ -83,7 +83,7 @@ class ReportService
 
     public function customerTransactions(int $customerId, string $dateFrom, string $dateTo): array
     {
-        return $this->db()->query(
+        $result = $this->db()->query(
             "SELECT i.*, c.customer_name
              FROM invoices i
              JOIN customers c ON c.id = i.customer_id
@@ -91,5 +91,24 @@ class ReportService
              ORDER BY i.created_at DESC",
             [$customerId, $dateFrom, $dateTo]
         )->fetchAll();
+
+        $totalSpent = 0.0;
+        $lastTransaction = null;
+
+        foreach ($result as $row) {
+            $totalSpent += (float) ($row['total_amount'] ?? 0);
+            if ($lastTransaction === null) {
+                $lastTransaction = $row['created_at'] ?? null;
+            }
+        }
+
+        return [
+            'summary' => [
+                'total_transactions' => count($result),
+                'total_spent'        => $totalSpent,
+                'last_transaction'   => $lastTransaction,
+            ],
+            'transactions' => $result,
+        ];
     }
 }

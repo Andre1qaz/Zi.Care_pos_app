@@ -81,19 +81,30 @@ class InvoiceService
         $payment->payment_time = date('Y-m-d H:i:s');
         $payment->notes = $paymentData['notes'] ?? null;
 
-        if (!$payment->save()) {
-            throw new ValidationException(['Failed to create payment record']);
-        }
+        // Keep the payment row and the invoice balance update atomic.
+        $db = Di::getDefault()->getShared('db');
+        $db->begin();
 
-        $invoice->paid_amount += $paymentAmount;
-        $invoice->payment_status = $this->calculatePaymentStatus(
-            (float) $invoice->total_amount,
-            (float) $invoice->paid_amount,
-            $invoice->due_date
-        );
+        try {
+            if (!$payment->save()) {
+                throw new ValidationException(['Failed to create payment record']);
+            }
 
-        if (!$invoice->save()) {
-            throw new ValidationException(['Failed to update invoice']);
+            $invoice->paid_amount += $paymentAmount;
+            $invoice->payment_status = $this->calculatePaymentStatus(
+                (float) $invoice->total_amount,
+                (float) $invoice->paid_amount,
+                $invoice->due_date
+            );
+
+            if (!$invoice->save()) {
+                throw new ValidationException(['Failed to update invoice']);
+            }
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollback();
+            throw $e;
         }
 
         // --- SINKRONISASI ODOO: PEMBAYARAN LANJUTAN ---
@@ -107,7 +118,8 @@ class InvoiceService
                 );
             }
         } catch (\Exception $e) {
-            // Abaikan agar gagal sync tidak mempengaruhi database lokal
+            // Gagal sync tidak boleh menggagalkan transaksi lokal, tapi tetap dicatat.
+            Di::getDefault()->getShared('logger')->error('Odoo payment sync failed: ' . $e->getMessage());
         }
 
         return [
@@ -158,6 +170,13 @@ class InvoiceService
         $payments = $data['payments'] ?? [];
         $cashier = $data['cashier']['name'] ?? 'N/A';
         $customer = $data['customer'] ?? ['customer_name' => 'Walk-in Customer', 'phone' => '-', 'email' => '-', 'address' => '-'];
+
+        // Escape values interpolated into the PDF HTML to prevent markup injection.
+        $safeInvoiceNumber = htmlspecialchars((string) $invoice['invoice_number']);
+        $safeCashier       = htmlspecialchars((string) $cashier);
+        $safeCustomerName  = htmlspecialchars((string) ($customer['customer_name'] ?? '-'));
+        $safeCustomerPhone = htmlspecialchars((string) ($customer['phone'] ?? '-'));
+        $safeCustomerEmail = htmlspecialchars((string) ($customer['email'] ?? '-'));
 
         $rows = '';
         foreach ($details as $index => $item) {
@@ -236,7 +255,7 @@ HTML;
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {$invoice['invoice_number']}</title>
+    <title>Invoice {$safeInvoiceNumber}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 12px; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -276,7 +295,7 @@ HTML;
                 <p>Point of Sale System</p>
             </div>
             <div class="header-right">
-                <div class="invoice-number">{$invoice['invoice_number']}</div>
+                <div class="invoice-number">{$safeInvoiceNumber}</div>
                 <div style="margin-top: 10px;">{$statusBadge}</div>
             </div>
         </div>
@@ -290,22 +309,22 @@ HTML;
                 </div>
                 <div class="info-row">
                     <span class="info-label">Kasir:</span>
-                    <span class="info-value">{$cashier}</span>
+                    <span class="info-value">{$safeCashier}</span>
                 </div>
             </div>
             <div class="info-section">
                 <h3>Informasi Pelanggan</h3>
                 <div class="info-row">
                     <span class="info-label">Nama:</span>
-                    <span class="info-value">{$customer['customer_name']}</span>
+                    <span class="info-value">{$safeCustomerName}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Telepon:</span>
-                    <span class="info-value">{$customer['phone']}</span>
+                    <span class="info-value">{$safeCustomerPhone}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Email:</span>
-                    <span class="info-value">{$customer['email']}</span>
+                    <span class="info-value">{$safeCustomerEmail}</span>
                 </div>
             </div>
         </div>

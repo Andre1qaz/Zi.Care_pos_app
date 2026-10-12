@@ -36,16 +36,20 @@ backend/
 │   │   └── services.php          # DI service definitions
 │   ├── controllers/
 │   │   ├── AuthController.php
+│   │   ├── BaseController.php
 │   │   ├── ProductController.php
 │   │   ├── CategoryController.php
 │   │   ├── CustomerController.php
 │   │   ├── TransactionController.php
-│   │   ├── PaymentController.php
 │   │   ├── InvoiceController.php
+│   │   ├── OutstandingPaymentController.php
+│   │   ├── UserController.php
+│   │   ├── AuditLogController.php
 │   │   ├── DashboardController.php
 │   │   └── ReportController.php
 │   ├── models/
 │   │   ├── User.php
+│   │   ├── Role.php
 │   │   ├── Product.php
 │   │   ├── Category.php
 │   │   ├── Customer.php
@@ -57,25 +61,25 @@ backend/
 │   │   ├── BaseRepository.php
 │   │   ├── UserRepository.php
 │   │   ├── ProductRepository.php
-│   │   ├── InvoiceRepository.php
-│   │   └── ...
+│   │   ├── CategoryRepository.php
+│   │   ├── CustomerRepository.php
+│   │   └── InvoiceRepository.php
 │   ├── services/
 │   │   ├── AuthService.php
 │   │   ├── ProductService.php
+│   │   ├── CategoryService.php
+│   │   ├── CustomerService.php
 │   │   ├── TransactionService.php
 │   │   ├── PaymentService.php
 │   │   ├── InvoiceService.php
+│   │   ├── OutstandingPaymentService.php
 │   │   ├── DashboardService.php
 │   │   ├── ReportService.php
+│   │   ├── AuditLogService.php
 │   │   └── OdooSyncService.php
 │   ├── middleware/
 │   │   ├── AuthMiddleware.php
-│   │   ├── RoleMiddleware.php
 │   │   └── CorsMiddleware.php
-│   ├── validators/
-│   │   ├── ProductValidator.php
-│   │   ├── CustomerValidator.php
-│   │   └── TransactionValidator.php
 │   ├── exceptions/
 │   │   ├── AppException.php
 │   │   ├── ValidationException.php
@@ -103,7 +107,6 @@ backend/
 | `repositories/` | Data access layer, complex queries |
 | `services/` | Business logic, transaction orchestration |
 | `middleware/` | Cross-cutting: auth, CORS, logging |
-| `validators/` | Input validation rules |
 | `exceptions/` | Custom exception hierarchy |
 | `helpers/` | Utility functions |
 
@@ -254,7 +257,9 @@ pending → cancelled
 | Reports | ✅ | ✅ | ❌ |
 | Odoo Sync Admin | ✅ | ❌ | ❌ |
 
-Implementation: `RoleMiddleware` checks `$user->role` against allowed roles per route.
+Implementation: setiap aksi controller memanggil `$this->requireRole(['administrator', ...])`
+(dari `BaseController`) atau memeriksa role di level service. `requireRole` melempar
+`AppException(403)` sehingga respons tetap berupa JSON dan melewati pipeline CORS.
 
 ---
 

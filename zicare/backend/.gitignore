@@ -1,0 +1,27 @@
+# Environment secrets — never commit real values.
+.env
+.env.*
+!.env.example
+
+# Dependencies & build output
+vendor/
+storage/logs/*.log
+storage/*.key
+storage/cache/
+
+# Throwaway one-off debug/config scripts (root level only).
+# Run migrations/seeding/sync through the maintained tools in cli/ instead.
+/check_*.php
+/test_*.php
+/setup_*.php
+/update_*.php
+/fix_*.php
+/find_*.php
+/install_*.php
+/manual_*.php
+/create_*.php
+/test-db.php
+
+# OS / editor noise
+Thumbs.db
+.DS_Store

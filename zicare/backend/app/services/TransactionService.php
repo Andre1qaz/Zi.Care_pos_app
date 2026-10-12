@@ -75,7 +75,10 @@ class TransactionService
             ];
         }
 
-        $totalPaid = array_sum(array_column($payments, 'amount'));
+        $totalPaid = array_sum(array_map(
+            static fn ($p) => (float) ($p['amount'] ?? 0),
+            $payments
+        ));
         
         $db = Di::getDefault()->getShared('db');
         $db->begin();
@@ -83,13 +86,11 @@ class TransactionService
         try {
             $invoice = new Invoice();
             $invoice->invoice_number = InvoiceNumberGenerator::generate();
-            
-            // Integrasi Data Pelanggan yang Terhubung ke OdooSyncService
+
+            // Customer data lives on the related `customers` record (via customer_id);
+            // the invoices table has no customer_name/email/phone columns.
             $invoice->customer_id = $data['customer_id'] ?? null;
-            $invoice->customer_name = $data['customer_name'] ?? 'Walk-in Customer';
-            $invoice->customer_email = $data['customer_email'] ?? 'walkin@pos.com';
-            $invoice->customer_phone = $data['customer_phone'] ?? '';
-            
+
             $invoice->cashier_id = $cashierId;
             // Menyimpan metode pembayaran utama untuk keperluan sinkronisasi sederhana
             $invoice->payment_method = $data['payments'][0]['payment_method'] ?? 'cash'; 
@@ -158,6 +159,24 @@ class TransactionService
         }
         if (!isset($data['payments']) || empty($data['payments']) || !is_array($data['payments'])) {
             $errors['payments'] = 'At least one payment is required';
+        } elseif (is_array($data['payments'])) {
+            $validMethods = ['cash', 'tunai', 'qris', 'transfer', 'ewallet'];
+            foreach ($data['payments'] as $index => $payment) {
+                if (!is_array($payment)) {
+                    $errors['payments'] = "Payment entry at index {$index} is invalid";
+                    break;
+                }
+                $method = strtolower((string) ($payment['payment_method'] ?? ''));
+                if (!in_array($method, $validMethods, true)) {
+                    $errors['payments'] = "Invalid payment method at index {$index}";
+                    break;
+                }
+                $amount = $payment['amount'] ?? null;
+                if (!is_numeric($amount) || (float) $amount < 0) {
+                    $errors['payments'] = "Payment amount must be a non-negative number at index {$index}";
+                    break;
+                }
+            }
         }
         if (!empty($errors)) {
             throw new ValidationException($errors);

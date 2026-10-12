@@ -27,7 +27,7 @@ Configure `.env` with database credentials.
 **Nginx config snippet:**
 ```nginx
 server {
-    listen 8080;
+    listen 8090;
     root /path/to/POS/backend/public;
     index index.php;
 
@@ -136,14 +136,14 @@ try {
 
 ## 6. Odoo Sync Worker
 
-Run as cron or queue worker:
+Run as a scheduled (cron) worker:
 
 ```bash
 # Every 5 minutes - retry failed syncs
 */5 * * * * php /path/to/backend/cli/sync_odoo.php
 ```
 
-Sync states: `pending → syncing → synced | failed → manual_review`
+Sync states: `pending → synced | failed` (invoice `failed`/`pending` diproses ulang oleh worker di atas).
 
 ---
 

@@ -94,7 +94,7 @@ function formatDate(dateStr) {
 async function loadCustomer() {
   try {
     const { data } = await api.get(`/customers/${route.params.id}`)
-    customer.value = data
+    customer.value = data.data
   } catch (e) {
     console.error('Failed to load customer:', e)
   }
@@ -105,8 +105,8 @@ async function loadTransactions() {
     const { data } = await api.get('/reports/customer-transactions', {
       params: { customer_id: route.params.id }
     })
-    invoices.value = data.transactions || []
-    stats.value = data.summary || {
+    invoices.value = (data.data && data.data.transactions) || []
+    stats.value = (data.data && data.data.summary) || {
       total_transactions: 0,
       total_spent: 0,
       last_transaction: null

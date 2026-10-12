@@ -13,6 +13,11 @@ class AuditLogService
         $db = Di::getDefault()->getShared('db');
         $offset = ($page - 1) * $limit;
 
+        // Defensive: LIMIT/OFFSET are interpolated, so force integers.
+        $page = max(1, (int) $page);
+        $limit = max(1, (int) $limit);
+        $offset = max(0, (int) $offset);
+
         $where = ['1=1'];
         $params = [];
 

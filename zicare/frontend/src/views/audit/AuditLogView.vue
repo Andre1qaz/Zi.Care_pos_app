@@ -20,11 +20,11 @@
         <label>Entity Type</label>
         <select v-model="filters.entity_type" @change="loadLogs">
           <option value="">Semua Entity</option>
-          <option value="User">User</option>
-          <option value="Product">Product</option>
-          <option value="Category">Category</option>
-          <option value="Customer">Customer</option>
-          <option value="Invoice">Invoice</option>
+          <option value="user">User</option>
+          <option value="product">Product</option>
+          <option value="category">Category</option>
+          <option value="customer">Customer</option>
+          <option value="invoice">Invoice</option>
         </select>
       </div>
       <div class="filter-group">
@@ -153,13 +153,13 @@ async function loadLogs() {
       )
     }
   })
-  logs.value = data.data
-  pagination.value = data.pagination
+  logs.value = data.data.data || []
+  pagination.value = data.data.pagination || pagination.value
 }
 
 async function loadStats() {
   const { data } = await api.get('/audit-logs/stats')
-  stats.value = data
+  stats.value = data.data || {}
 }
 
 async function loadUsers() {

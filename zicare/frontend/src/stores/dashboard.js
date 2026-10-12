@@ -8,10 +8,10 @@ export const useDashboardStore = defineStore('dashboard', {
   }),
 
   actions: {
-    async fetchStats() {
+    async fetchStats(range = 'today') {
       this.loading = true
       try {
-        const { data } = await api.get('/dashboard')
+        const { data } = await api.get('/dashboard', { params: { range } })
         this.stats = data.data
       } finally {
         this.loading = false

@@ -155,10 +155,10 @@ docker run -d \
   -p 8069:8069 \
   --link odoo-db:db \
   -v /path/to/odoo/addons:/mnt/extra-addons \
-  --name odoo odoo:17
+  --name odoo odoo:19
 
 # Copy custom module
-cp -r odoo/pos_integration_manager /path/to/odoo/addons/
+cp -r odoo_addons/pos_sales_dashboard /path/to/odoo/addons/
 # Install via Odoo Apps menu
 ```
 
