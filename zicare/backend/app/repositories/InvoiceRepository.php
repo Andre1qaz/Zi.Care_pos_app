@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Models\Customer;
 use App\Models\Invoice;
 
 class InvoiceRepository extends BaseRepository
@@ -73,21 +74,85 @@ class InvoiceRepository extends BaseRepository
             $bind['date_to'] = $filters['date_to'];
         }
 
+        if (!empty($filters['payment_status'])) {
+            $statuses = array_values((array) $filters['payment_status']);
+            $placeholders = [];
+            foreach ($statuses as $index => $status) {
+                $key = 'payment_status_' . $index;
+                $placeholders[] = ':' . $key . ':';
+                $bind[$key] = $status;
+            }
+            $conditions[] = 'payment_status IN (' . implode(', ', $placeholders) . ')';
+        }
+
+        if (!empty($filters['search'])) {
+            $term = '%' . $filters['search'] . '%';
+
+            // Phalcon Model doesn't accept a raw SQL subquery here, so resolve
+            // matching customer ids first and bind them as an array.
+            $matchingCustomerIds = [];
+            $customers = Customer::find([
+                'columns'    => 'id',
+                'conditions' => 'customer_name LIKE :search:',
+                'bind'       => ['search' => $term],
+            ]);
+            foreach ($customers as $customer) {
+                $matchingCustomerIds[] = (int) $customer->id;
+            }
+
+            if (!empty($matchingCustomerIds)) {
+                $conditions[] = '(invoice_number LIKE :search: OR customer_id IN ({customer_ids:array}))';
+                $bind['search'] = $term;
+                $bind['customer_ids'] = $matchingCustomerIds;
+            } else {
+                $conditions[] = 'invoice_number LIKE :search:';
+                $bind['search'] = $term;
+            }
+        }
+
+        $where = implode(' AND ', $conditions);
         $offset = ($page - 1) * $limit;
 
         $invoices = Invoice::find([
-            'conditions' => implode(' AND ', $conditions),
+            'conditions' => $where,
             'bind'       => $bind,
             'limit'      => $limit,
             'offset'     => $offset,
             'order'      => 'created_at DESC',
         ]);
 
+        $items = $invoices->toArray();
+
+        // Attach customer details so list views can show the customer name.
+        $customerIds = [];
+        foreach ($items as $item) {
+            if (!empty($item['customer_id'])) {
+                $customerIds[] = (int) $item['customer_id'];
+            }
+        }
+
+        if (!empty($customerIds)) {
+            $customers = Customer::find([
+                'conditions' => 'id IN ({ids:array})',
+                'bind'       => ['ids' => array_values(array_unique($customerIds))],
+            ]);
+
+            $customerMap = [];
+            foreach ($customers as $customer) {
+                $customerMap[(int) $customer->id] = $customer->toArray();
+            }
+
+            foreach ($items as &$item) {
+                $item['customer'] = $customerMap[(int) ($item['customer_id'] ?? 0)] ?? null;
+            }
+            unset($item);
+        }
+
         $total = Invoice::count([
-            'conditions' => implode(' AND ', $conditions),
+            'conditions' => $where,
             'bind'       => $bind,
         ]);
 
-        return ['items' => $invoices->toArray(), 'total' => $total];
+        return ['items' => $items, 'total' => $total];
     }
 }

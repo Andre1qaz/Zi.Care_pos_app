@@ -142,7 +142,11 @@ class InvoiceService
 
     public function getOutstandingInvoices(array $filters = [], int $page = 1, int $limit = 20): array
     {
-        $filters['payment_status'] = ['unpaid', 'partial', 'overdue'];
+        // Default to all outstanding statuses, but respect an explicit status filter.
+        if (empty($filters['payment_status'])) {
+            $filters['payment_status'] = ['unpaid', 'partial', 'overdue'];
+        }
+
         return $this->repository->findAll($filters, $page, $limit);
     }
 

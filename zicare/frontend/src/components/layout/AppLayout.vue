@@ -3,7 +3,7 @@
     <aside class="no-print fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col shadow-xl z-40">
       <div class="border-b border-slate-700/50 bg-white/5 p-6">
         <div class="flex items-center gap-3">
-          <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-12 w-auto object-contain" />
+          <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-14 w-auto object-contain drop-shadow-lg" />
         </div>
       </div>
       

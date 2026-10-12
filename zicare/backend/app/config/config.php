@@ -20,6 +20,7 @@ return [
         'db'                => $_ENV['ODOO_DB'] ?? 'pos_db_odoo19_copy',
         'username'          => $_ENV['ODOO_USERNAME'] ?? 'andre',
         'password'          => $_ENV['ODOO_PASSWORD'] ?? '',
+        'api_key'           => $_ENV['ODOO_API_KEY'] ?? '',
         'journal_cash_code' => $_ENV['ODOO_JOURNAL_CASH_CODE'] ?? 'CSH1',
         'journal_bank_code' => $_ENV['ODOO_JOURNAL_BANK_CODE'] ?? 'BNK1',
         'enabled'           => filter_var($_ENV['ODOO_SYNC_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),

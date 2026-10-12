@@ -44,9 +44,17 @@ class OdooSyncService
         try {
             $uid = $this->authenticate();
 
-            $customerName = !empty($data['invoice']['customer_name']) ? $data['invoice']['customer_name'] : 'Walk-in Customer';
-            $customerEmail = !empty($data['invoice']['customer_email']) && $data['invoice']['customer_email'] !== 'walkin@pos.com' ? $data['invoice']['customer_email'] : '';
-            $customerPhone = !empty($data['invoice']['customer_phone']) ? $data['invoice']['customer_phone'] : '';
+            // Customer data lives on the related `customers` record; the invoices
+            // table has no customer_name/email/phone columns.
+            $customer = $data['customer'] ?? [];
+
+            $customerName = trim((string) ($customer['customer_name'] ?? '')) !== ''
+                ? $customer['customer_name']
+                : 'Walk-in Customer';
+            $customerEmail = !empty($customer['email']) && $customer['email'] !== 'walkin@pos.com'
+                ? $customer['email']
+                : '';
+            $customerPhone = !empty($customer['phone']) ? $customer['phone'] : '';
 
             $partnerId = $this->syncCustomer([
                 'name' => $customerName,
@@ -69,8 +77,8 @@ class OdooSyncService
                 ]];
             }
 
-            $authCredential = $this->config['password'];
-            
+            $authCredential = $this->authCredential();
+
             // Get sale journal (type 'sale' fallback ke code 'SALE')
             $saleJournal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['type', '=', 'sale']]], ['limit' => 1]]);
             if (empty($saleJournal)) {
@@ -114,8 +122,8 @@ class OdooSyncService
     public function syncCustomer(array $data): int
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['password'];
-        
+        $authCredential = $this->authCredential();
+
         $domain = [];
         if (!empty($data['email'])) {
             $domain[] = ['email', '=', $data['email']];
@@ -137,7 +145,7 @@ class OdooSyncService
     public function syncProduct(array $data): int
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['password'];
+        $authCredential = $this->authCredential();
         $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'search', [[['default_code', '=', $data['sku']]]], ['limit' => 1]]);
 
         if (!empty($existing)) return (int) $existing[0];
@@ -154,7 +162,7 @@ class OdooSyncService
     public function syncPayment(int $moveId, float $amount, string $method): void
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['password'];
+        $authCredential = $this->authCredential();
 
         $isCash = in_array(strtolower($method), ['cash', 'tunai']);
         $journalCode = $isCash ? $this->config['journal_cash_code'] : $this->config['journal_bank_code'];
@@ -185,7 +193,7 @@ class OdooSyncService
     public function syncCreditNote(int $originalMoveId, array $refundLines): void
     {
         $uid = $this->authenticate();
-        $authCredential = $this->config['password'];
+        $authCredential = $this->authCredential();
 
         $invoice = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'read', [[$originalMoveId]], ['fields' => ['partner_id']]]);
         if (empty($invoice)) return;
@@ -221,9 +229,20 @@ class OdooSyncService
 
     private function authenticate(): int
     {
-        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $this->config['password'], []]);
+        $uid = $this->jsonRpc('common', 'authenticate', [$this->config['db'], $this->config['username'], $this->authCredential(), []]);
         if (!$uid) throw new \RuntimeException('Auth failed');
         return (int) $uid;
+    }
+
+    /**
+     * Kredensial untuk autentikasi Odoo.
+     * Odoo menerima API key pada parameter password saat authenticate,
+     * jadi kita prioritaskan ODOO_API_KEY dan fallback ke ODOO_PASSWORD.
+     */
+    private function authCredential(): string
+    {
+        $apiKey = (string) ($this->config['api_key'] ?? '');
+        return $apiKey !== '' ? $apiKey : (string) $this->config['password'];
     }
 
     private function jsonRpc(string $service, string $method, array $params)

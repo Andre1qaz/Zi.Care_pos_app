@@ -59,7 +59,7 @@ async function handleLogin() {
     if (e.response?.data?.message) {
       error.value = e.response.data.message
     } else if (e.code === 'ERR_NETWORK') {
-      error.value = 'Tidak bisa terhubung ke server. Pastikan backend berjalan di port 8080.'
+      error.value = 'Tidak bisa terhubung ke server. Pastikan backend sudah berjalan.'
     } else {
       error.value = 'Login gagal'
     }
@@ -91,10 +91,11 @@ async function handleLogin() {
 }
 
 .logo-image {
-  height: 80px;
+  height: 100px;
   width: auto;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 .login-card h1 {

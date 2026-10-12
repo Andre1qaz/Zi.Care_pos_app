@@ -26,6 +26,13 @@ $di->setShared('router', function () {
 
 $di->setShared('request', fn () => new Request());
 
+// Phalcon\Http\Request membutuhkan service 'filter' saat dipakai dengan filter
+// (mis. getQuery('status', 'string')). Tanpa ini, request berfilter akan error.
+$di->setShared('filter', function () {
+    $factory = new \Phalcon\Filter\FilterFactory();
+    return $factory->newInstance();
+});
+
 $di->setShared('response', fn () => new Response());
 
 $di->setShared('modelsManager', fn () => new ModelsManager());

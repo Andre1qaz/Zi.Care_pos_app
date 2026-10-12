@@ -4,114 +4,140 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Exceptions\NotFoundException;
 use App\Exceptions\ValidationException;
-use App\Services\InvoiceService;
-use Phalcon\Di\Di;
+use App\Helpers\ResponseHelper;
 
 class OutstandingPaymentController extends BaseController
 {
-    private InvoiceService $invoiceService;
-
-    public function onConstruct()
+    /**
+     * GET /api/v1/outstanding-payments
+     * List all outstanding invoices with filters.
+     */
+    public function list()
     {
-        parent::onConstruct();
-        $this->invoiceService = Di::getDefault()->getShared('invoiceService');
+        try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
+
+            $page = (int) ($this->request->getQuery('page', 'int', 1));
+            $limit = (int) ($this->request->getQuery('limit', 'int', 20));
+            $search = (string) ($this->request->getQuery('search', 'string', ''));
+            $status = (string) ($this->request->getQuery('status', 'string', ''));
+
+            $filters = [];
+
+            if ($search !== '') {
+                $filters['search'] = $search;
+            }
+
+            if ($status !== '' && in_array($status, ['unpaid', 'partial', 'overdue'], true)) {
+                $filters['payment_status'] = $status;
+            }
+
+            $result = $this->di->getShared('invoiceService')
+                ->getOutstandingInvoices($filters, $page, $limit);
+
+            return ResponseHelper::success($result['items'] ?? [], 'Success', [
+                'page'  => $page,
+                'limit' => $limit,
+                'total' => $result['total'] ?? 0,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 
     /**
-     * GET /api/outstanding-payments
-     * List all outstanding invoices with filters
+     * GET /api/v1/outstanding-payments/{id}
+     * Get outstanding invoice details with payment history.
      */
-    public function listAction()
+    public function get(int $id)
     {
-        $this->requireAuth(['administrator', 'manager', 'cashier']);
+        try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
 
-        $page = (int) ($this->request->getQuery('page', 'int', 1));
-        $limit = (int) ($this->request->getQuery('limit', 'int', 20));
-        $search = $this->request->getQuery('search', 'string', '');
-        $status = $this->request->getQuery('status', 'string', '');
+            $data = $this->di->getShared('invoiceService')->getPaymentHistory($id);
 
-        $filters = [];
-        
-        if (!empty($search)) {
-            $filters['search'] = $search;
+            return ResponseHelper::success($data);
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
         }
-        
-        if (!empty($status) && in_array($status, ['unpaid', 'partial', 'overdue'])) {
-            $filters['payment_status'] = $status;
-        }
-
-        $result = $this->invoiceService->getOutstandingInvoices($filters, $page, $limit);
-
-        return $this->success($result);
     }
 
     /**
-     * GET /api/outstanding-payments/{id}
-     * Get outstanding invoice details with payment history
+     * POST /api/v1/outstanding-payments/{id}/payment
+     * Add a payment to an outstanding invoice.
      */
-    public function getAction(int $id)
+    public function addPayment(int $id)
     {
-        $this->requireAuth(['administrator', 'manager', 'cashier']);
+        try {
+            $this->requireRole(['administrator', 'manager', 'cashier']);
 
-        $data = $this->invoiceService->getPaymentHistory($id);
+            $data = $this->request->getJsonRawBody(true);
+            if (!$data) {
+                $data = $this->request->getPost();
+            }
+            if (is_object($data)) {
+                $data = json_decode(json_encode($data), true);
+            }
+            $data = (array) $data;
 
-        return $this->success($data);
+            $validation = $this->validatePaymentData($data);
+            if (!$validation['valid']) {
+                throw new ValidationException($validation['message']);
+            }
+
+            $authUser = $this->getAuthUser();
+            $cashierId = (int) ($authUser['sub'] ?? 0);
+
+            $result = $this->di->getShared('invoiceService')->addPayment($id, $data, $cashierId);
+
+            return ResponseHelper::success($result, 'Payment added successfully');
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
+        }
     }
 
     /**
-     * POST /api/outstanding-payments/{id}/payment
-     * Add a payment to an outstanding invoice
+     * GET /api/v1/outstanding-payments/stats
+     * Get statistics for outstanding payments.
      */
-    public function addPaymentAction(int $id)
+    public function stats()
     {
-        $this->requireAuth(['administrator', 'manager', 'cashier']);
+        try {
+            $this->requireRole(['administrator', 'manager']);
 
-        $data = $this->request->getJsonRawBody(true);
-        
-        $validation = $this->validatePaymentData($data);
-        if (!$validation['valid']) {
-            throw new ValidationException($validation['message']);
+            $filters = ['payment_status' => ['unpaid', 'partial', 'overdue']];
+            $result = $this->di->getShared('invoiceService')
+                ->getOutstandingInvoices($filters, 1, 1000);
+
+            $stats = [
+                'total_outstanding' => 0,
+                'total_invoices'    => count($result['items'] ?? []),
+                'by_status'         => [
+                    'unpaid'  => ['count' => 0, 'amount' => 0],
+                    'partial' => ['count' => 0, 'amount' => 0],
+                    'overdue' => ['count' => 0, 'amount' => 0],
+                ],
+            ];
+
+            foreach ($result['items'] ?? [] as $invoice) {
+                $status = $invoice['payment_status'] ?? 'unpaid';
+                $outstanding = (float) ($invoice['outstanding_balance'] ?? 0);
+
+                $stats['total_outstanding'] += $outstanding;
+
+                if (!isset($stats['by_status'][$status])) {
+                    $stats['by_status'][$status] = ['count' => 0, 'amount' => 0];
+                }
+
+                $stats['by_status'][$status]['count']++;
+                $stats['by_status'][$status]['amount'] += $outstanding;
+            }
+
+            return ResponseHelper::success($stats);
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
         }
-
-        $cashierId = $this->auth->user['id'];
-        $result = $this->invoiceService->addPayment($id, $data, $cashierId);
-
-        return $this->success($result, 'Payment added successfully');
-    }
-
-    /**
-     * GET /api/outstanding-payments/stats
-     * Get statistics for outstanding payments
-     */
-    public function statsAction()
-    {
-        $this->requireAuth(['administrator', 'manager']);
-
-        $filters = ['payment_status' => ['unpaid', 'partial', 'overdue']];
-        $result = $this->invoiceService->getOutstandingInvoices($filters, 1, 1000);
-
-        $stats = [
-            'total_outstanding' => 0,
-            'total_invoices' => count($result['data'] ?? []),
-            'by_status' => [
-                'unpaid' => ['count' => 0, 'amount' => 0],
-                'partial' => ['count' => 0, 'amount' => 0],
-                'overdue' => ['count' => 0, 'amount' => 0]
-            ]
-        ];
-
-        foreach ($result['data'] ?? [] as $invoice) {
-            $status = $invoice['payment_status'];
-            $outstanding = (float) $invoice['outstanding_balance'];
-            
-            $stats['total_outstanding'] += $outstanding;
-            $stats['by_status'][$status]['count']++;
-            $stats['by_status'][$status]['amount'] += $outstanding;
-        }
-
-        return $this->success($stats);
     }
 
     private function validatePaymentData(array $data): array
@@ -121,7 +147,7 @@ class OutstandingPaymentController extends BaseController
         }
 
         $validMethods = ['cash', 'qris', 'transfer', 'ewallet'];
-        if (!in_array($data['payment_method'], $validMethods)) {
+        if (!in_array($data['payment_method'], $validMethods, true)) {
             return ['valid' => false, 'message' => 'Invalid payment method'];
         }
 

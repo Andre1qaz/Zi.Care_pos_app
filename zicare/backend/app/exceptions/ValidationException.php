@@ -8,11 +8,23 @@ class ValidationException extends AppException
 {
     protected int $statusCode = 422;
 
+    private array $errors;
+
+    /**
+     * @param array|string $errors A map/list of field errors, or a single message string.
+     * @param string|null  $message Optional message when $errors is an array.
+     */
     public function __construct(
-        private array $errors,
-        string $message = 'Validation failed'
+        array|string $errors = [],
+        ?string $message = null
     ) {
-        parent::__construct($message);
+        if (is_string($errors)) {
+            $message = $message ?? $errors;
+            $errors = [$errors];
+        }
+
+        $this->errors = $errors;
+        parent::__construct($message ?? 'Validation failed');
     }
 
     public function getErrors(): array
