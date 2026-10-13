@@ -16,8 +16,8 @@
     >
       <div class="flex items-center justify-between gap-3 px-6 pb-2 pt-6">
         <div class="flex items-center gap-3">
-          <span class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white/95 shadow-bubble-sm">
-            <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-1" />
+          <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-bubble-md ring-4 ring-white/20">
+            <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-2" />
           </span>
           <div class="leading-tight">
             <p class="text-sm font-extrabold tracking-tight text-white">Zi.CARE</p>
@@ -175,7 +175,7 @@
                   </div>
 
                   <button
-                    v-if="canAccess(['administrator'])"
+                    v-if="canAccess(['administrator', 'manager'])"
                     type="button"
                     class="flex w-full items-center justify-center gap-1.5 border-t border-slate-100 px-5 py-3 text-sm font-semibold text-primary-600 transition-colors hover:bg-primary-50"
                     @click="goToProducts"
@@ -251,9 +251,9 @@ const navItems = [
   { to: '/transactions', label: 'Transaksi', icon: ShoppingCart, roles: ['administrator', 'cashier'] },
   { to: '/invoices', label: 'Invoice', icon: Receipt, roles: ['administrator', 'manager', 'cashier'] },
   { to: '/outstanding-payments', label: 'Pembayaran Tertunda', icon: Clock, roles: ['administrator', 'manager', 'cashier'] },
-  { to: '/products', label: 'Produk', icon: Package, roles: ['administrator'] },
-  { to: '/categories', label: 'Kategori', icon: Tag, roles: ['administrator'] },
-  { to: '/customers', label: 'Pelanggan', icon: Users, roles: ['administrator', 'cashier'] },
+  { to: '/products', label: 'Produk', icon: Package, roles: ['administrator', 'manager'] },
+  { to: '/categories', label: 'Kategori', icon: Tag, roles: ['administrator', 'manager'] },
+  { to: '/customers', label: 'Pelanggan', icon: Users, roles: ['administrator', 'manager', 'cashier'] },
   { to: '/reports', label: 'Laporan', icon: BarChart3, roles: ['administrator', 'manager'] },
   { to: '/users', label: 'Pengguna', icon: UserCog, roles: ['administrator'] },
   { to: '/audit-logs', label: 'Audit Log', icon: FileText, roles: ['administrator', 'manager'] },

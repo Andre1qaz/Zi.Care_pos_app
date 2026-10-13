@@ -88,6 +88,7 @@ class UserController extends BaseController
 
             $data = $user->toArray();
             unset($data['password']);
+            $this->logAudit("Created user {$user->email}", 'user', (int) $user->id);
             return ResponseHelper::success($data, 'User created', null);
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -147,6 +148,7 @@ class UserController extends BaseController
 
             $data = $user->toArray();
             unset($data['password']);
+            $this->logAudit("Updated user {$user->email}", 'user', (int) $user->id);
             return ResponseHelper::success($data, 'User updated');
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -163,6 +165,7 @@ class UserController extends BaseController
             }
             $user->is_active = 0;
             $user->save();
+            $this->logAudit("Deactivated user {$user->email}", 'user', (int) $user->id);
             return ResponseHelper::success(null, 'User deactivated');
         } catch (\Throwable $e) {
             return $this->handleException($e);

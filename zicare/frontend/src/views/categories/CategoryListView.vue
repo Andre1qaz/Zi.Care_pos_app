@@ -89,8 +89,12 @@ const showForm = ref(false)
 const form = ref({ category_name: '', description: '' })
 
 async function load() {
-  const { data } = await api.get('/categories')
-  categories.value = data.data
+  try {
+    const { data } = await api.get('/categories')
+    categories.value = data.data
+  } catch (e) {
+    toast.error('Gagal memuat kategori.')
+  }
 }
 
 function openForm(c = null) {
@@ -99,13 +103,19 @@ function openForm(c = null) {
 }
 
 async function save() {
-  if (form.value.id) {
-    await api.put(`/categories/${form.value.id}`, form.value)
-  } else {
-    await api.post('/categories', form.value)
+  const isEdit = !!form.value.id
+  try {
+    if (isEdit) {
+      await api.put(`/categories/${form.value.id}`, form.value)
+    } else {
+      await api.post('/categories', form.value)
+    }
+    showForm.value = false
+    await load()
+    toast.success(isEdit ? 'Kategori berhasil diperbarui' : 'Kategori berhasil ditambahkan')
+  } catch (e) {
+    toast.error(e?.response?.data?.message || 'Gagal menyimpan kategori.')
   }
-  showForm.value = false
-  await load()
 }
 
 async function remove(id) {
@@ -115,9 +125,13 @@ async function remove(id) {
     variant: 'danger'
   })
   if (confirmed) {
-    await api.delete(`/categories/${id}`)
-    toast.success('Kategori berhasil dihapus')
-    await load()
+    try {
+      await api.delete(`/categories/${id}`)
+      toast.success('Kategori berhasil dihapus')
+      await load()
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Gagal menghapus kategori.')
+    }
   }
 }
 

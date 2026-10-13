@@ -104,6 +104,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
+import { toast } from '@/composables/feedback'
 import { Receipt, Wallet, Calendar, ArrowLeft, Eye } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -128,7 +129,7 @@ async function loadCustomer() {
     const { data } = await api.get(`/customers/${route.params.id}`)
     customer.value = data.data
   } catch (e) {
-    console.error('Failed to load customer:', e)
+    toast.error('Gagal memuat data pelanggan.')
   }
 }
 
@@ -144,7 +145,7 @@ async function loadTransactions() {
       last_transaction: null
     }
   } catch (e) {
-    console.error('Failed to load transactions:', e)
+    toast.error('Gagal memuat riwayat transaksi.')
     invoices.value = []
     stats.value = { total_transactions: 0, total_spent: 0, last_transaction: null }
   }

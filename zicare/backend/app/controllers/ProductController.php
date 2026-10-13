@@ -47,6 +47,7 @@ class ProductController extends BaseController
         try {
             $this->requireRole(['administrator']);
             $product = $this->di->getShared('productService')->create($this->getJsonBody());
+            $this->logAudit("Created product {$product['product_name']}", 'product', isset($product['id']) ? (int) $product['id'] : null);
             return ResponseHelper::success($product, 'Product created');
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -58,6 +59,7 @@ class ProductController extends BaseController
         try {
             $this->requireRole(['administrator']);
             $product = $this->di->getShared('productService')->update($id, $this->getJsonBody());
+            $this->logAudit("Updated product {$product['product_name']}", 'product', $id);
             return ResponseHelper::success($product, 'Product updated');
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -69,6 +71,7 @@ class ProductController extends BaseController
         try {
             $this->requireRole(['administrator']);
             $this->di->getShared('productService')->delete($id);
+            $this->logAudit("Deleted product ({$id})", 'product', $id);
             return ResponseHelper::success(null, 'Product deleted');
         } catch (\Throwable $e) {
             return $this->handleException($e);

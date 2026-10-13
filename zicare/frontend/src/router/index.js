@@ -24,25 +24,25 @@ const routes = [
         path: 'products',
         name: 'products',
         component: () => import('@/views/products/ProductListView.vue'),
-        meta: { roles: ['administrator'] }
+        meta: { roles: ['administrator', 'manager'] }
       },
       {
         path: 'categories',
         name: 'categories',
         component: () => import('@/views/categories/CategoryListView.vue'),
-        meta: { roles: ['administrator'] }
+        meta: { roles: ['administrator', 'manager'] }
       },
       {
         path: 'customers',
         name: 'customers',
         component: () => import('@/views/customers/CustomerListView.vue'),
-        meta: { roles: ['administrator', 'cashier'] }
+        meta: { roles: ['administrator', 'manager', 'cashier'] }
       },
       {
         path: 'customers/:id/history',
         name: 'customer-history',
         component: () => import('@/views/customers/CustomerHistoryView.vue'),
-        meta: { roles: ['administrator', 'cashier'] }
+        meta: { roles: ['administrator', 'manager', 'cashier'] }
       },
       {
         path: 'transactions',

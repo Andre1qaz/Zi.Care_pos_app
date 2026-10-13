@@ -17,8 +17,11 @@
           <label>Status</label>
           <select v-model="statusFilter" @change="onFilterChange">
             <option value="">Semua Status</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
+            <option value="unpaid">Belum Dibayar</option>
+            <option value="partial">Sebagian Dibayar</option>
+            <option value="paid">Lunas</option>
+            <option value="overdue">Jatuh Tempo</option>
+            <option value="cancelled">Dibatalkan</option>
           </select>
         </div>
       </div>
@@ -78,6 +81,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { toast } from '@/composables/feedback'
 import { Eye, Receipt } from 'lucide-vue-next'
 
 const invoices = ref([])
@@ -93,18 +97,22 @@ function formatDate(dateStr) {
 }
 
 async function load() {
-  const { data } = await api.get('/invoices', {
-    params: {
-      search: search.value || undefined,
-      payment_status: statusFilter.value || undefined,
-      page: pagination.value.page,
-      limit: pagination.value.limit
-    }
-  })
-  invoices.value = data.data
-  const total = data.meta?.total || 0
-  pagination.value.total = total
-  pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+  try {
+    const { data } = await api.get('/invoices', {
+      params: {
+        search: search.value || undefined,
+        payment_status: statusFilter.value || undefined,
+        page: pagination.value.page,
+        limit: pagination.value.limit
+      }
+    })
+    invoices.value = data.data
+    const total = data.meta?.total || 0
+    pagination.value.total = total
+    pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+  } catch (e) {
+    toast.error('Gagal memuat daftar invoice.')
+  }
 }
 
 function onFilterChange() {

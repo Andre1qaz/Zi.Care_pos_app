@@ -5,7 +5,7 @@
         <h1 class="page-title">Manajemen Produk</h1>
         <p class="page-subtitle">Kelola barang dan jasa untuk penjualan</p>
       </div>
-      <button @click="showForm = true" class="btn btn-primary">
+      <button v-if="canManage" @click="showForm = true" class="btn btn-primary">
         <Plus class="h-4 w-4" />
         Tambah Produk
       </button>
@@ -44,7 +44,7 @@
               <th>Kategori</th>
               <th>Harga</th>
               <th>Stok/Status</th>
-              <th class="text-right">Aksi</th>
+              <th v-if="canManage" class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +80,7 @@
                   {{ p.service_status === 'tersedia' ? 'Tersedia' : 'Tidak Tersedia' }}
                 </span>
               </td>
-              <td class="text-right">
+              <td v-if="canManage" class="text-right">
                 <div class="flex justify-end gap-2">
                   <button
                     @click="editProduct(p)"
@@ -207,12 +207,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
+import { useAuthStore } from '@/stores/auth'
 import { Plus, Pencil, Trash2, Package, X } from 'lucide-vue-next'
 import { toast, confirmDialog } from '@/composables/feedback'
 
 const store = useProductStore()
+const auth = useAuthStore()
+const canManage = computed(() => auth.userRole === 'administrator')
 const search = ref('')
 const categoryFilter = ref('')
 const showForm = ref(false)
@@ -245,15 +248,19 @@ function onTypeChange() {
 }
 
 async function load() {
-  await store.fetchProducts({
-    search: search.value || undefined,
-    category_id: categoryFilter.value || undefined,
-    page: pagination.value.page,
-    limit: pagination.value.limit
-  })
-  const total = store.total || 0
-  pagination.value.total = total
-  pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+  try {
+    await store.fetchProducts({
+      search: search.value || undefined,
+      category_id: categoryFilter.value || undefined,
+      page: pagination.value.page,
+      limit: pagination.value.limit
+    })
+    const total = store.total || 0
+    pagination.value.total = total
+    pagination.value.pages = Math.max(1, Math.ceil(total / pagination.value.limit))
+  } catch (e) {
+    toast.error('Gagal memuat produk. Silakan coba lagi.')
+  }
 }
 
 function onFilterChange() {
@@ -271,13 +278,7 @@ function editProduct(p) {
   showForm.value = true
 }
 
-async function saveProduct() {
-  if (form.value.id) {
-    await store.updateProduct(form.value.id, form.value)
-  } else {
-    await store.createProduct(form.value)
-  }
-  showForm.value = false
+function resetForm() {
   form.value = {
     product_code: '',
     product_name: '',
@@ -287,7 +288,23 @@ async function saveProduct() {
     service_status: 'tersedia',
     category_id: null
   }
-  await load()
+}
+
+async function saveProduct() {
+  const isEdit = !!form.value.id
+  try {
+    if (isEdit) {
+      await store.updateProduct(form.value.id, form.value)
+    } else {
+      await store.createProduct(form.value)
+    }
+    showForm.value = false
+    resetForm()
+    await load()
+    toast.success(isEdit ? 'Produk berhasil diperbarui' : 'Produk berhasil ditambahkan')
+  } catch (e) {
+    toast.error(e?.response?.data?.message || 'Gagal menyimpan produk.')
+  }
 }
 
 async function removeProduct(id) {
@@ -297,14 +314,22 @@ async function removeProduct(id) {
     variant: 'danger'
   })
   if (confirmed) {
-    await store.deleteProduct(id)
-    toast.success('Produk berhasil dihapus')
-    await load()
+    try {
+      await store.deleteProduct(id)
+      toast.success('Produk berhasil dihapus')
+      await load()
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Gagal menghapus produk.')
+    }
   }
 }
 
 onMounted(async () => {
-  await store.fetchCategories()
+  try {
+    await store.fetchCategories()
+  } catch (e) {
+    // Categories only power the filter dropdown.
+  }
   await load()
 })
 </script>

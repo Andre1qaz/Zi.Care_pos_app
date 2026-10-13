@@ -33,7 +33,10 @@ class InvoiceRepository extends BaseRepository
         )->fetchAll();
 
         $payments = $this->db()->query(
-            'SELECT * FROM payments WHERE invoice_id = ?',
+            'SELECT p.*, u.name AS cashier_name
+             FROM payments p
+             LEFT JOIN users u ON u.id = p.cashier_id
+             WHERE p.invoice_id = ?',
             [$id]
         )->fetchAll();
 

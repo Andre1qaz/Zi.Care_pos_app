@@ -58,6 +58,17 @@ class AuditLogService
             $params
         )->fetchAll();
 
+        // Decode metadata so list consumers get structured JSON, not a raw string.
+        foreach ($logs as &$logItem) {
+            if (!empty($logItem['metadata'])) {
+                $decoded = json_decode($logItem['metadata'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $logItem['metadata'] = $decoded;
+                }
+            }
+        }
+        unset($logItem);
+
         $count = $db->query(
             "SELECT COUNT(*) as total FROM audit_logs al WHERE $whereClause",
             $params

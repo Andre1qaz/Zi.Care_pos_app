@@ -340,7 +340,7 @@ async function loadInvoices() {
     const { data } = await api.get('/outstanding-payments', { params })
     invoices.value = data.data || []
   } catch (error) {
-    console.error('Failed to load invoices:', error)
+    toast.error('Gagal memuat daftar pembayaran tertunda.')
   }
 }
 
@@ -349,7 +349,7 @@ async function loadStats() {
     const { data } = await api.get('/outstanding-payments/stats')
     stats.value = data.data || stats.value
   } catch (error) {
-    console.error('Failed to load stats:', error)
+    toast.error('Gagal memuat ringkasan pembayaran.')
   }
 }
 

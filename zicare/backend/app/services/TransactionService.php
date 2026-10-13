@@ -123,6 +123,7 @@ class TransactionService
             foreach ($payments as $paymentData) {
                 $payment = new Payment();
                 $payment->invoice_id = $invoice->id;
+                $payment->cashier_id = $cashierId;
                 $payment->payment_method = $paymentData['payment_method'];
                 $payment->provider = $paymentData['provider'] ?? null;
                 $payment->payment_reference = $paymentData['payment_reference'] ?? null;

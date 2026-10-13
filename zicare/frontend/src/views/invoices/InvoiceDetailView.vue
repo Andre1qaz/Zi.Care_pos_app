@@ -156,7 +156,7 @@
                 </div>
               </div>
               <div class="text-right">
-                <p class="text-sm text-slate-500">{{ payment.cashier?.name || '-' }}</p>
+                <p class="text-sm text-slate-500">{{ payment.cashier_name || '-' }}</p>
                 <p v-if="payment.notes" class="text-xs text-slate-400">{{ payment.notes }}</p>
               </div>
             </div>
@@ -426,7 +426,7 @@ async function loadInvoice() {
     const { data } = await api.get(`/invoices/${route.params.id}`)
     invoice.value = data.data
   } catch (error) {
-    console.error('Failed to load invoice:', error)
+    toast.error('Gagal memuat data invoice.')
   }
 }
 
@@ -435,7 +435,7 @@ async function loadPaymentHistory() {
     const { data } = await api.get(`/invoices/${route.params.id}/payments`)
     paymentHistory.value = data.data.payments || []
   } catch (error) {
-    console.error('Failed to load payment history:', error)
+    paymentHistory.value = []
   }
 }
 

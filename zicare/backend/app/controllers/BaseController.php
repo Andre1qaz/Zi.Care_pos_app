@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Exceptions\AppException;
 use App\Exceptions\ValidationException;
 use App\Helpers\ResponseHelper;
+use App\Models\AuditLog;
 use Phalcon\Di\Injectable;
 
 abstract class BaseController extends Injectable
@@ -71,6 +72,29 @@ abstract class BaseController extends Injectable
             // Throw instead of echoing + exit so the response goes through
             // Phalcon's pipeline (keeps CORS headers and status formatting).
             throw new AppException('Forbidden: You do not have permission to access this resource', 403);
+        }
+    }
+
+    /**
+     * Best-effort audit trail entry. Never throws, so it can't break the
+     * primary operation it documents.
+     */
+    protected function logAudit(string $activity, ?string $entityType = null, ?int $entityId = null): void
+    {
+        try {
+            $authUser = $this->getAuthUser();
+            $log = new AuditLog();
+            $log->user_id = (int) ($authUser['sub'] ?? 0);
+            $log->activity = $activity;
+            if ($entityType !== null) {
+                $log->entity_type = $entityType;
+            }
+            if ($entityId !== null) {
+                $log->entity_id = $entityId;
+            }
+            $log->save();
+        } catch (\Throwable $e) {
+            error_log('Audit logging failed: ' . $e->getMessage());
         }
     }
 

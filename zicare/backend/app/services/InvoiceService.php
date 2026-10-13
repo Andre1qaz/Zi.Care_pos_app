@@ -135,16 +135,14 @@ class InvoiceService
             throw new NotFoundException('Invoice not found');
         }
 
-        $payments = Payment::find([
-            'conditions' => 'invoice_id = :invoice_id:',
-            'bind' => ['invoice_id' => $invoiceId],
-            'order' => 'created_at ASC'
-        ]);
-
-        $paymentsList = [];
-        foreach ($payments as $p) {
-            $paymentsList[] = $p->toArray();
-        }
+        $paymentsList = Di::getDefault()->getShared('db')->query(
+            'SELECT p.*, u.name AS cashier_name
+             FROM payments p
+             LEFT JOIN users u ON u.id = p.cashier_id
+             WHERE p.invoice_id = ?
+             ORDER BY p.created_at ASC',
+            [$invoiceId]
+        )->fetchAll();
 
         return [
             'invoice' => $invoice->toArray(),

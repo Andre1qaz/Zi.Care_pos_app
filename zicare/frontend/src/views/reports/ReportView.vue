@@ -254,8 +254,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import api from '@/services/api'
+import { toast } from '@/composables/feedback'
 import { Download, Search, Receipt, DollarSign, FileBarChart } from 'lucide-vue-next'
 
 const tabs = [
@@ -267,6 +268,12 @@ const tabs = [
 
 const activeTab = ref('daily')
 const reportData = ref(null)
+
+// Clear stale data whenever the user switches report type. Without this the
+// previous report's shape (object vs array) leaks into the new tab's template.
+watch(activeTab, () => {
+  reportData.value = null
+})
 const dailyDate = ref(new Date().toISOString().slice(0, 10))
 const monthYear = ref(new Date().getFullYear())
 const monthMonth = ref(new Date().getMonth() + 1)
@@ -274,19 +281,31 @@ const dateFrom = ref(new Date().toISOString().slice(0, 7) + '-01')
 const dateTo = ref(new Date().toISOString().slice(0, 10))
 
 async function loadDaily() {
-  const { data } = await api.get('/reports/daily-sales', { params: { date: dailyDate.value } })
-  reportData.value = data.data
+  try {
+    const { data } = await api.get('/reports/daily-sales', { params: { date: dailyDate.value } })
+    reportData.value = data.data
+  } catch (e) {
+    toast.error('Gagal memuat laporan penjualan harian.')
+  }
 }
 
 async function loadMonthly() {
-  const { data } = await api.get('/reports/monthly-sales', { params: { year: monthYear.value, month: monthMonth.value } })
-  reportData.value = data.data
+  try {
+    const { data } = await api.get('/reports/monthly-sales', { params: { year: monthYear.value, month: monthMonth.value } })
+    reportData.value = data.data
+  } catch (e) {
+    toast.error('Gagal memuat laporan penjualan bulanan.')
+  }
 }
 
 async function loadRange() {
   const endpoint = activeTab.value === 'product' ? '/reports/product-sales' : '/reports/payments'
-  const { data } = await api.get(endpoint, { params: { date_from: dateFrom.value, date_to: dateTo.value } })
-  reportData.value = data.data
+  try {
+    const { data } = await api.get(endpoint, { params: { date_from: dateFrom.value, date_to: dateTo.value } })
+    reportData.value = data.data
+  } catch (e) {
+    toast.error('Gagal memuat laporan.')
+  }
 }
 
 function formatCurrency(val) {

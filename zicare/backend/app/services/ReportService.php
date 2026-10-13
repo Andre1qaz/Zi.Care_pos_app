@@ -84,9 +84,10 @@ class ReportService
     public function customerTransactions(int $customerId, string $dateFrom, string $dateTo): array
     {
         $result = $this->db()->query(
-            "SELECT i.*, c.customer_name
+            "SELECT i.*, c.customer_name, u.name AS cashier_name
              FROM invoices i
              JOIN customers c ON c.id = i.customer_id
+             LEFT JOIN users u ON u.id = i.cashier_id
              WHERE i.customer_id = ? AND DATE(i.created_at) BETWEEN ? AND ?
              ORDER BY i.created_at DESC",
             [$customerId, $dateFrom, $dateTo]

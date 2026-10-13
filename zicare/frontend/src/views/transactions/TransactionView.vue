@@ -526,17 +526,20 @@ function removePaymentEntry(index) {
 }
 
 async function loadProducts() {
-  await productStore.fetchProducts({
-    search: search.value || undefined,
-    category_id: categoryFilter.value || undefined,
-    limit: 1000
-  })
+  try {
+    await productStore.fetchProducts({
+      search: search.value || undefined,
+      category_id: categoryFilter.value || undefined,
+      limit: 1000
+    })
+  } catch (e) {
+    toast.error('Gagal memuat produk.')
+  }
 }
 
 async function loadCustomers() {
   try {
     const response = await api.get('/customers')
-    console.log('Response API Pelanggan:', response)
 
     let dataPelanggan = []
     if (response.data && Array.isArray(response.data.data)) {
@@ -549,7 +552,7 @@ async function loadCustomers() {
 
     customers.value = Array.isArray(dataPelanggan) ? dataPelanggan : []
   } catch (e) {
-    console.error('Gagal mengambil data pelanggan', e)
+    toast.error('Gagal memuat data pelanggan.')
   }
 }
 
@@ -565,6 +568,10 @@ watch(selectedCustomerId, (newId) => {
 async function checkout() {
   if (!allowPartialPayment.value && totalPaid.value < cart.total) {
     toast.error('Total pembayaran kurang dari tagihan')
+    return
+  }
+  if (allowPartialPayment.value && totalPaid.value <= 0) {
+    toast.error('Pembayaran sebagian harus lebih dari 0')
     return
   }
 
@@ -756,7 +763,11 @@ async function saveCustomer() {
 onMounted(async () => {
   loadHeld()
   await loadCustomers()
-  await productStore.fetchCategories()
+  try {
+    await productStore.fetchCategories()
+  } catch (e) {
+    // Only used for the category filter.
+  }
   await loadProducts()
 })
 </script>

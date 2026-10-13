@@ -104,7 +104,9 @@ class OutstandingPaymentController extends BaseController
     public function stats()
     {
         try {
-            $this->requireRole(['administrator', 'manager']);
+            // Cashiers can open the outstanding-payments page, so they must be
+            // able to read its summary cards too.
+            $this->requireRole(['administrator', 'manager', 'cashier']);
 
             $filters = ['payment_status' => ['unpaid', 'partial', 'overdue']];
             $result = $this->di->getShared('invoiceService')

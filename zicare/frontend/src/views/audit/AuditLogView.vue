@@ -156,6 +156,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { toast } from '@/composables/feedback'
 import { ClipboardList, Calendar, Eye, X } from 'lucide-vue-next'
 
 const logs = ref([])
@@ -177,27 +178,39 @@ function formatDate(dateStr) {
 }
 
 async function loadLogs() {
-  const { data } = await api.get('/audit-logs', {
-    params: {
-      page: pagination.value.page,
-      limit: pagination.value.limit,
-      ...Object.fromEntries(
-        Object.entries(filters.value).filter(([_, v]) => v !== '' && v !== null)
-      )
-    }
-  })
-  logs.value = data.data.data || []
-  pagination.value = data.data.pagination || pagination.value
+  try {
+    const { data } = await api.get('/audit-logs', {
+      params: {
+        page: pagination.value.page,
+        limit: pagination.value.limit,
+        ...Object.fromEntries(
+          Object.entries(filters.value).filter(([_, v]) => v !== '' && v !== null)
+        )
+      }
+    })
+    logs.value = data.data.data || []
+    pagination.value = data.data.pagination || pagination.value
+  } catch (e) {
+    toast.error('Gagal memuat audit log.')
+  }
 }
 
 async function loadStats() {
-  const { data } = await api.get('/audit-logs/stats')
-  stats.value = data.data || {}
+  try {
+    const { data } = await api.get('/audit-logs/stats')
+    stats.value = data.data || {}
+  } catch (e) {
+    stats.value = {}
+  }
 }
 
 async function loadUsers() {
-  const { data } = await api.get('/users')
-  users.value = data.data
+  try {
+    const { data } = await api.get('/users')
+    users.value = data.data
+  } catch (e) {
+    users.value = []
+  }
 }
 
 function showDetail(log) {

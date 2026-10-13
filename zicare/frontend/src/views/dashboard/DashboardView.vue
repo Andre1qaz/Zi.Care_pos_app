@@ -179,6 +179,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useDashboardStore } from '@/stores/dashboard'
+import { toast } from '@/composables/feedback'
 import Chart from 'chart.js/auto'
 import {
   DollarSign,
@@ -219,12 +220,18 @@ function getPaymentBadgeClass(method) {
 }
 
 async function fetchStats() {
-  await store.fetchStats(dateRange.value)
-  await nextTick()
-  initCharts()
+  try {
+    await store.fetchStats(dateRange.value)
+    await nextTick()
+    initCharts()
+  } catch (e) {
+    toast.error('Gagal memuat data dashboard.')
+  }
 }
 
 function initCharts() {
+  if (!store.stats) return
+
   // Revenue Chart
   if (revenueChart.value && store.stats.monthly_revenue_chart) {
     if (revenueChartInstance) revenueChartInstance.destroy()

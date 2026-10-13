@@ -124,8 +124,12 @@ const roles = { 1: 'Administrator', 2: 'Manager', 3: 'Cashier' }
 function roleName(id) { return roles[id] || id }
 
 async function loadUsers() {
-  const { data } = await api.get('/users')
-  users.value = data.data
+  try {
+    const { data } = await api.get('/users')
+    users.value = data.data
+  } catch (e) {
+    toast.error('Gagal memuat daftar pengguna.')
+  }
 }
 
 function openForm(user = null) {

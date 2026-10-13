@@ -10,12 +10,12 @@
     >
       <!-- Brand panel -->
       <div class="relative hidden flex-col justify-between bg-brand-gradient p-10 text-white lg:flex">
-        <div class="flex items-center gap-3">
-          <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/95 shadow-bubble-sm">
-            <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-1.5" />
+        <div class="flex items-center gap-4">
+          <span class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-bubble-md ring-4 ring-white/20">
+            <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-2" />
           </span>
           <div class="leading-tight">
-            <p class="text-lg font-extrabold tracking-tight">Zi.CARE</p>
+            <p class="text-xl font-extrabold tracking-tight">Zi.CARE</p>
             <p class="text-xs font-medium text-white/70">Point of Sales</p>
           </div>
         </div>
@@ -44,7 +44,9 @@
       <!-- Form panel -->
       <div class="bg-white p-8 sm:p-10 lg:p-12">
         <div class="mb-8 flex flex-col items-center text-center lg:hidden">
-          <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="mb-4 h-20 w-auto object-contain" />
+          <span class="mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-bubble-md ring-4 ring-white/20">
+            <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-2.5" />
+          </span>
           <h1 class="text-2xl font-extrabold text-slate-900">Zi.CARE POS</h1>
           <p class="mt-1 text-sm text-slate-500">Masuk ke sistem Point of Sales</p>
         </div>

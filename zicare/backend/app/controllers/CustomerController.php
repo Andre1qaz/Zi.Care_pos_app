@@ -42,6 +42,7 @@ class CustomerController extends BaseController
         try {
             $this->requireRole(['administrator', 'manager', 'cashier']);
             $customer = $this->di->getShared('customerService')->create($this->getJsonBody());
+            $this->logAudit("Created customer {$customer['customer_name']}", 'customer', isset($customer['id']) ? (int) $customer['id'] : null);
             return ResponseHelper::success($customer, 'Customer created');
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -53,6 +54,7 @@ class CustomerController extends BaseController
         try {
             $this->requireRole(['administrator', 'manager', 'cashier']);
             $customer = $this->di->getShared('customerService')->update($id, $this->getJsonBody());
+            $this->logAudit("Updated customer {$customer['customer_name']}", 'customer', $id);
             return ResponseHelper::success($customer, 'Customer updated');
         } catch (\Throwable $e) {
             return $this->handleException($e);
@@ -64,6 +66,7 @@ class CustomerController extends BaseController
         try {
             $this->requireRole(['administrator', 'manager']);
             $this->di->getShared('customerService')->delete($id);
+            $this->logAudit("Deleted customer ({$id})", 'customer', $id);
             return ResponseHelper::success(null, 'Customer deleted');
         } catch (\Throwable $e) {
             return $this->handleException($e);
