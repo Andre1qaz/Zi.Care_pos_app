@@ -1,6 +1,6 @@
 # POS Application – Enterprise Point of Sales
 
-Aplikasi Point of Sales (POS) enterprise-ready dengan integrasi Odoo Accounting (sinkronisasi dua arah).
+python odoo-bin -r odoo -w odoo -d odoo
 
 ## Technology Stack
 
