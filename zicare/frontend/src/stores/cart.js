@@ -58,6 +58,13 @@ export const useCartStore = defineStore('cart', {
       this.items = this.items.filter((i) => i.product_id !== productId)
     },
 
+    // Replace the whole cart (used to restore a held/parked transaction).
+    loadState({ items, customerId, customerName } = {}) {
+      this.items = Array.isArray(items) ? items.map((i) => ({ ...i })) : []
+      this.customerId = customerId ?? null
+      this.customerName = customerName || 'Walk-in Customer'
+    },
+
     setCustomer(id, name) {
       this.customerId = id || null
       this.customerName = name || 'Walk-in Customer'
