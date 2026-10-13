@@ -1,14 +1,14 @@
 <template>
-  <div>
-    <div class="mb-8 flex items-center justify-between">
+  <div class="page">
+    <div class="page-header">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p class="mt-1 text-sm text-slate-500">Ringkasan performa bisnis Anda</p>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Ringkasan performa bisnis Anda</p>
       </div>
       <select
         v-model="dateRange"
         @change="fetchStats"
-        class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:border-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10"
+        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-inner-soft transition-all duration-200 hover:border-slate-300 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10"
       >
         <option value="today">Hari Ini</option>
         <option value="week">7 Hari Terakhir</option>
@@ -16,74 +16,85 @@
       </select>
     </div>
 
-    <div v-if="store.loading" class="flex items-center justify-center py-12 text-slate-500">
-      <div class="flex items-center gap-2">
-        <div class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-primary-600"></div>
-        <span>Memuat data...</span>
-      </div>
+    <div v-if="store.loading" class="flex items-center justify-center gap-3 py-16 text-slate-500">
+      <span class="spinner"></span>
+      <span class="text-sm font-medium">Memuat data...</span>
     </div>
 
     <template v-else-if="store.stats">
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="card">
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="stat-card animate-fade-in-up">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-              <DollarSign class="h-6 w-6 text-green-600" />
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-success-400 to-success-600 text-white shadow-bubble-sm">
+              <DollarSign class="h-7 w-7" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-slate-500">Penjualan ({{ periodLabel }})</p>
-              <p class="text-2xl font-bold text-slate-900">{{ formatCurrency(store.stats.total_sales_today) }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Penjualan ({{ periodLabel }})</p>
+              <p class="mt-1 truncate text-2xl font-extrabold text-slate-900">{{ formatCurrency(store.stats.total_sales_today) }}</p>
             </div>
           </div>
         </div>
-        
-        <div class="card">
+
+        <div class="stat-card animate-fade-in-up">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-              <Receipt class="h-6 w-6 text-blue-600" />
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-bubble-sm">
+              <Receipt class="h-7 w-7" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-slate-500">Total Transaksi</p>
-              <p class="text-2xl font-bold text-slate-900">{{ store.stats.total_transactions }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Transaksi</p>
+              <p class="mt-1 truncate text-2xl font-extrabold text-slate-900">{{ store.stats.total_transactions }}</p>
             </div>
           </div>
         </div>
-        
-        <div class="card">
+
+        <div class="stat-card animate-fade-in-up">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100">
-              <Package class="h-6 w-6 text-purple-600" />
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-400 to-violet-600 text-white shadow-bubble-sm">
+              <Package class="h-7 w-7" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-slate-500">Total Produk</p>
-              <p class="text-2xl font-bold text-slate-900">{{ store.stats.total_products || 0 }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Produk</p>
+              <p class="mt-1 truncate text-2xl font-extrabold text-slate-900">{{ store.stats.total_products || 0 }}</p>
             </div>
           </div>
         </div>
-        
-        <div class="card">
+
+        <div class="stat-card animate-fade-in-up">
           <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100">
-              <TrendingUp class="h-6 w-6 text-amber-600" />
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-warning-400 to-warning-600 text-white shadow-bubble-sm">
+              <TrendingUp class="h-7 w-7" />
             </div>
-            <div>
-              <p class="text-sm font-medium text-slate-500">Revenue Bulan Ini</p>
-              <p class="text-2xl font-bold text-slate-900">{{ formatCurrency(store.stats.monthly_revenue) }}</p>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Revenue Bulan Ini</p>
+              <p class="mt-1 truncate text-2xl font-extrabold text-slate-900">{{ formatCurrency(store.stats.monthly_revenue) }}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div class="card mt-6">
-        <h3 class="mb-4 text-lg font-semibold text-slate-900">Revenue 30 Hari Terakhir</h3>
+        <div class="mb-5 flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-bubble-sm">
+            <TrendingUp class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="section-title">Revenue 30 Hari Terakhir</h3>
+            <p class="mt-0.5 text-xs text-slate-400">Tren pendapatan harian</p>
+          </div>
+        </div>
         <div class="h-80">
           <canvas ref="revenueChart"></canvas>
         </div>
       </div>
 
       <div class="mt-6 grid gap-6 lg:grid-cols-2">
-        <div class="card">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900">Produk Terlaris</h3>
+        <div class="table-card">
+          <div class="flex items-center gap-3 border-b border-slate-100 px-6 py-5">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-success-400 to-success-600 text-white shadow-bubble-sm">
+              <Trophy class="h-5 w-5" />
+            </div>
+            <h3 class="section-title">Produk Terlaris</h3>
+          </div>
           <div class="overflow-x-auto">
             <table class="table">
               <thead>
@@ -104,19 +115,26 @@
           </div>
           <div
             v-if="!store.stats.top_selling_products?.length"
-            class="flex flex-col items-center justify-center py-8 text-slate-500"
+            class="empty-state"
           >
-            <Trophy class="h-8 w-8 mb-2 opacity-50" />
-            <p class="text-sm">Belum ada data</p>
+            <div class="empty-icon">
+              <Trophy class="h-7 w-7" />
+            </div>
+            <p class="text-sm font-medium text-slate-500">Belum ada data</p>
           </div>
         </div>
-        
+
         <div class="card">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900">Statistik Pembayaran</h3>
+          <div class="mb-5 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-violet to-brand-indigo text-white shadow-bubble-sm">
+              <CreditCard class="h-5 w-5" />
+            </div>
+            <h3 class="section-title">Statistik Pembayaran</h3>
+          </div>
           <div class="h-48">
             <canvas ref="paymentChart"></canvas>
           </div>
-          <div class="mt-4 overflow-x-auto">
+          <div class="mt-5 overflow-x-auto">
             <table class="table">
               <thead>
                 <tr>
@@ -130,7 +148,7 @@
                   <td>
                     <span
                       :class="[
-                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+                        'badge capitalize',
                         getPaymentBadgeClass(p.payment_method)
                       ]"
                     >
@@ -145,10 +163,12 @@
           </div>
           <div
             v-if="!store.stats.payment_statistics?.length"
-            class="flex flex-col items-center justify-center py-8 text-slate-500"
+            class="empty-state"
           >
-            <CreditCard class="h-8 w-8 mb-2 opacity-50" />
-            <p class="text-sm">Belum ada data</p>
+            <div class="empty-icon">
+              <CreditCard class="h-7 w-7" />
+            </div>
+            <p class="text-sm font-medium text-slate-500">Belum ada data</p>
           </div>
         </div>
       </div>

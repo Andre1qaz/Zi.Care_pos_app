@@ -1,159 +1,254 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
-      <h1>Laporan</h1>
-      <button v-if="reportData" class="btn btn-success" @click="exportToCSV">📥 Export CSV</button>
+      <div>
+        <h1 class="page-title">Laporan</h1>
+        <p class="page-subtitle">Analisis penjualan dan pembayaran</p>
+      </div>
+      <button v-if="reportData" class="btn btn-success" @click="exportToCSV">
+        <Download class="h-4 w-4" />
+        Export CSV
+      </button>
     </div>
+
     <div class="tabs no-print">
-      <button v-for="t in tabs" :key="t.id" :class="['tab', { active: activeTab === t.id }]" @click="activeTab = t.id">
+      <button
+        v-for="t in tabs"
+        :key="t.id"
+        :class="['tab', { active: activeTab === t.id }]"
+        @click="activeTab = t.id"
+      >
         {{ t.label }}
       </button>
     </div>
 
     <div class="card" style="margin-top: 1rem">
       <div v-if="activeTab === 'daily'" class="filters">
-        <input v-model="dailyDate" type="date" />
-        <button class="btn btn-primary" @click="loadDaily">Generate</button>
+        <div class="filter-group">
+          <label>Tanggal</label>
+          <input v-model="dailyDate" type="date" class="input" />
+        </div>
+        <button class="btn btn-primary" @click="loadDaily">
+          <Search class="h-4 w-4" />
+          Generate
+        </button>
       </div>
       <div v-if="activeTab === 'monthly'" class="filters">
-        <input v-model.number="monthYear" type="number" placeholder="Tahun" />
-        <input v-model.number="monthMonth" type="number" min="1" max="12" placeholder="Bulan" />
-        <button class="btn btn-primary" @click="loadMonthly">Generate</button>
+        <div class="filter-group">
+          <label>Tahun</label>
+          <input v-model.number="monthYear" type="number" placeholder="Tahun" class="input" />
+        </div>
+        <div class="filter-group">
+          <label>Bulan</label>
+          <input v-model.number="monthMonth" type="number" min="1" max="12" placeholder="Bulan" class="input" />
+        </div>
+        <button class="btn btn-primary" @click="loadMonthly">
+          <Search class="h-4 w-4" />
+          Generate
+        </button>
       </div>
       <div v-if="activeTab === 'product' || activeTab === 'payment'" class="filters">
-        <input v-model="dateFrom" type="date" />
-        <input v-model="dateTo" type="date" />
-        <button class="btn btn-primary" @click="loadRange">Generate</button>
+        <div class="filter-group">
+          <label>Dari Tanggal</label>
+          <input v-model="dateFrom" type="date" class="input" />
+        </div>
+        <div class="filter-group">
+          <label>Sampai Tanggal</label>
+          <input v-model="dateTo" type="date" class="input" />
+        </div>
+        <button class="btn btn-primary" @click="loadRange">
+          <Search class="h-4 w-4" />
+          Generate
+        </button>
       </div>
 
-      <div v-if="reportData" class="report-output">
+      <div v-if="reportData" class="report-output animate-fade-in">
         <!-- Daily Sales Report -->
-        <div v-if="activeTab === 'daily'">
+        <div v-if="activeTab === 'daily'" class="space-y-6">
           <div class="report-summary">
             <h3>Ringkasan</h3>
             <div class="summary-cards">
-              <div class="summary-card">
-                <label>Total Transaksi</label>
-                <strong>{{ reportData.summary.total_transactions }}</strong>
+              <div class="stat-card">
+                <div class="flex items-center gap-4">
+                  <div class="icon-badge bg-gradient-to-br from-primary-400 to-primary-600">
+                    <Receipt class="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p class="stat-label">Total Transaksi</p>
+                    <p class="stat-value">{{ reportData.summary.total_transactions }}</p>
+                  </div>
+                </div>
               </div>
-              <div class="summary-card">
-                <label>Total Revenue</label>
-                <strong>{{ formatCurrency(reportData.summary.total_revenue) }}</strong>
+              <div class="stat-card">
+                <div class="flex items-center gap-4">
+                  <div class="icon-badge bg-gradient-to-br from-success-400 to-success-600">
+                    <DollarSign class="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p class="stat-label">Total Revenue</p>
+                    <p class="stat-value">{{ formatCurrency(reportData.summary.total_revenue) }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <h3>Daftar Transaksi</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>No Invoice</th>
-                <th>Tanggal</th>
-                <th>Kasir</th>
-                <th>Pelanggan</th>
-                <th>Metode</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="t in reportData.transactions" :key="t.id">
-                <td>{{ t.invoice_number }}</td>
-                <td>{{ formatDate(t.created_at) }}</td>
-                <td>{{ t.cashier_name }}</td>
-                <td>{{ t.customer_name || 'Walk-in' }}</td>
-                <td>{{ t.payment_method }}</td>
-                <td>{{ formatCurrency(t.total_amount) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div>
+            <h3>Daftar Transaksi</h3>
+            <div class="table-card">
+              <div class="overflow-x-auto">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>No Invoice</th>
+                      <th>Tanggal</th>
+                      <th>Kasir</th>
+                      <th>Pelanggan</th>
+                      <th>Metode</th>
+                      <th class="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="t in reportData.transactions" :key="t.id">
+                      <td class="font-medium">{{ t.invoice_number }}</td>
+                      <td>{{ formatDate(t.created_at) }}</td>
+                      <td>{{ t.cashier_name }}</td>
+                      <td>{{ t.customer_name || 'Walk-in' }}</td>
+                      <td>
+                        <span class="badge badge-primary capitalize">{{ t.payment_method }}</span>
+                      </td>
+                      <td class="text-right font-semibold">{{ formatCurrency(t.total_amount) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Monthly Sales Report -->
-        <div v-if="activeTab === 'monthly'">
+        <div v-if="activeTab === 'monthly'" class="space-y-6">
           <div class="report-summary">
             <h3>Ringkasan Bulanan</h3>
             <div class="summary-cards">
-              <div class="summary-card">
-                <label>Total Transaksi</label>
-                <strong>{{ reportData.summary.total_transactions }}</strong>
+              <div class="stat-card">
+                <div class="flex items-center gap-4">
+                  <div class="icon-badge bg-gradient-to-br from-primary-400 to-primary-600">
+                    <Receipt class="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p class="stat-label">Total Transaksi</p>
+                    <p class="stat-value">{{ reportData.summary.total_transactions }}</p>
+                  </div>
+                </div>
               </div>
-              <div class="summary-card">
-                <label>Total Revenue</label>
-                <strong>{{ formatCurrency(reportData.summary.total_revenue) }}</strong>
+              <div class="stat-card">
+                <div class="flex items-center gap-4">
+                  <div class="icon-badge bg-gradient-to-br from-success-400 to-success-600">
+                    <DollarSign class="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p class="stat-label">Total Revenue</p>
+                    <p class="stat-value">{{ formatCurrency(reportData.summary.total_revenue) }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <h3>Breakdown Harian</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Jumlah Transaksi</th>
-                <th>Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="d in reportData.daily_breakdown" :key="d.date">
-                <td>{{ formatDate(d.date) }}</td>
-                <td>{{ d.transactions }}</td>
-                <td>{{ formatCurrency(d.revenue) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div>
+            <h3>Breakdown Harian</h3>
+            <div class="table-card">
+              <div class="overflow-x-auto">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Tanggal</th>
+                      <th class="text-right">Jumlah Transaksi</th>
+                      <th class="text-right">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="d in reportData.daily_breakdown" :key="d.date">
+                      <td class="font-medium">{{ formatDate(d.date) }}</td>
+                      <td class="text-right">{{ d.transactions }}</td>
+                      <td class="text-right font-semibold">{{ formatCurrency(d.revenue) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Product Sales Report -->
         <div v-if="activeTab === 'product'">
           <h3>Penjualan Produk</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Kode Produk</th>
-                <th>Nama Produk</th>
-                <th>Qty Terjual</th>
-                <th>Total Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in reportData" :key="p.product_code">
-                <td>{{ p.product_code }}</td>
-                <td>{{ p.product_name }}</td>
-                <td>{{ p.total_qty }}</td>
-                <td>{{ formatCurrency(p.total_revenue) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-card">
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Kode Produk</th>
+                    <th>Nama Produk</th>
+                    <th class="text-right">Qty Terjual</th>
+                    <th class="text-right">Total Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in reportData" :key="p.product_code">
+                    <td class="font-medium">{{ p.product_code }}</td>
+                    <td>{{ p.product_name }}</td>
+                    <td class="text-right">{{ p.total_qty }}</td>
+                    <td class="text-right font-semibold">{{ formatCurrency(p.total_revenue) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- Payment Report -->
         <div v-if="activeTab === 'payment'">
           <h3>Laporan Pembayaran</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>No Invoice</th>
-                <th>Metode</th>
-                <th>Provider</th>
-                <th>Referensi</th>
-                <th>Nominal</th>
-                <th>Status</th>
-                <th>Waktu</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in reportData" :key="p.id">
-                <td>{{ p.invoice_number }}</td>
-                <td>{{ p.payment_method }}</td>
-                <td>{{ p.provider || '-' }}</td>
-                <td>{{ p.payment_reference || '-' }}</td>
-                <td>{{ formatCurrency(p.amount) }}</td>
-                <td>{{ p.payment_status }}</td>
-                <td>{{ formatDateTime(p.payment_time || p.created_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-card">
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>No Invoice</th>
+                    <th>Metode</th>
+                    <th>Provider</th>
+                    <th>Referensi</th>
+                    <th class="text-right">Nominal</th>
+                    <th>Status</th>
+                    <th>Waktu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in reportData" :key="p.id">
+                    <td class="font-medium">{{ p.invoice_number }}</td>
+                    <td>
+                      <span class="badge badge-primary capitalize">{{ p.payment_method }}</span>
+                    </td>
+                    <td>{{ p.provider || '-' }}</td>
+                    <td>{{ p.payment_reference || '-' }}</td>
+                    <td class="text-right font-semibold">{{ formatCurrency(p.amount) }}</td>
+                    <td>
+                      <span class="badge badge-slate">{{ p.payment_status }}</span>
+                    </td>
+                    <td>{{ formatDateTime(p.payment_time || p.created_at) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-      <p v-else class="empty">Pilih filter dan klik Generate</p>
+      <div v-else class="empty-state">
+        <div class="empty-icon">
+          <FileBarChart class="h-8 w-8" />
+        </div>
+        <p class="text-sm font-medium text-slate-500">Pilih filter dan klik Generate</p>
+      </div>
     </div>
   </div>
 </template>
@@ -161,6 +256,7 @@
 <script setup>
 import { ref } from 'vue'
 import api from '@/services/api'
+import { Download, Search, Receipt, DollarSign, FileBarChart } from 'lucide-vue-next'
 
 const tabs = [
   { id: 'daily', label: 'Penjualan Harian' },
@@ -249,26 +345,99 @@ function exportToCSV() {
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.tab { padding: 0.5rem 1rem; border: 1px solid var(--border); background: white; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.875rem; transition: all 0.2s; }
-.tab:hover { border-color: var(--primary); }
-.tab.active { background: var(--primary); color: white; border-color: var(--primary); }
-.filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.filters input { padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.report-output { background: var(--surface); padding: 1.5rem; border-radius: var(--radius-md); overflow: auto; max-height: 500px; }
-.empty { color: var(--secondary); text-align: center; padding: 3rem 1rem; }
-.report-summary { margin-bottom: 2rem; }
-.report-summary h3 { margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600; }
+.page-header { margin-bottom: 1rem; }
+
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.375rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+}
+
+.tab {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--secondary);
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: #2563eb;
+  background: var(--primary-light);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #6366f1 0%, #2563eb 55%, #0ea5e9 100%);
+  color: white;
+  box-shadow: 0 10px 24px -14px rgba(37, 99, 235, 0.30), 0 4px 12px -8px rgba(15, 23, 42, 0.14);
+}
+
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 160px;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.report-output h3 { margin-bottom: 1rem; font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+
+.report-summary { margin-bottom: 0; }
+.report-summary h3 { margin-bottom: 1rem; font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+
 .summary-cards { display: flex; gap: 1rem; flex-wrap: wrap; }
-.summary-card { background: white; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); min-width: 180px; }
-.summary-card label { display: block; font-size: 0.875rem; color: var(--secondary); margin-bottom: 0.25rem; font-weight: 500; }
-.summary-card strong { font-size: 1.5rem; color: #1f2937; }
-.report-output h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem; font-weight: 600; }
-.report-output table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--radius-sm); overflow: hidden; }
-.report-output th { background: var(--surface); padding: 0.875rem 1rem; text-align: left; font-weight: 600; font-size: 0.875rem; color: #374151; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.025em; }
-.report-output td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
-.report-output tbody tr:hover { background: var(--surface); }
-.report-output tbody tr:last-child td { border-bottom: none; }
+.summary-cards .stat-card { flex: 1 1 220px; }
+
+.icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem;
+  width: 3rem;
+  flex-shrink: 0;
+  border-radius: 1rem;
+  color: white;
+  box-shadow: 0 10px 24px -14px rgba(37, 99, 235, 0.30), 0 4px 12px -8px rgba(15, 23, 42, 0.14);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--secondary);
+}
+
+.stat-value {
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+@media print {
+  .tabs { display: none; }
+}
 </style>

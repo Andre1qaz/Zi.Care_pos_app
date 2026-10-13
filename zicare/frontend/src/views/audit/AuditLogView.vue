@@ -1,119 +1,151 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
-      <h1>Audit Log History</h1>
-    </div>
-
-    <div class="filters card">
-      <div class="filter-group">
-        <label>User</label>
-        <select v-model="filters.user_id" @change="loadLogs">
-          <option value="">Semua User</option>
-          <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Activity</label>
-        <input v-model="filters.activity" placeholder="Cari activity..." @input="loadLogs" />
-      </div>
-      <div class="filter-group">
-        <label>Entity Type</label>
-        <select v-model="filters.entity_type" @change="loadLogs">
-          <option value="">Semua Entity</option>
-          <option value="user">User</option>
-          <option value="product">Product</option>
-          <option value="category">Category</option>
-          <option value="customer">Customer</option>
-          <option value="invoice">Invoice</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Tanggal Mulai</label>
-        <input v-model="filters.start_date" type="date" @change="loadLogs" />
-      </div>
-      <div class="filter-group">
-        <label>Tanggal Akhir</label>
-        <input v-model="filters.end_date" type="date" @change="loadLogs" />
+      <div>
+        <h1 class="page-title">Audit Log History</h1>
+        <p class="page-subtitle">Rekam jejak aktivitas pengguna di dalam sistem</p>
       </div>
     </div>
 
-    <div class="stats-grid" style="margin-bottom: 1.5rem">
-      <div class="stat-card card">
-        <span class="stat-icon">📋</span>
-        <div>
-          <span class="stat-label">Total Logs</span>
-          <span class="stat-value">{{ stats.total_logs || 0 }}</span>
+    <div class="card mb-6">
+      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div class="form-group mb-0">
+          <label>User</label>
+          <select v-model="filters.user_id" @change="loadLogs">
+            <option value="">Semua User</option>
+            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
+          </select>
         </div>
-      </div>
-      <div class="stat-card card">
-        <span class="stat-icon">📅</span>
-        <div>
-          <span class="stat-label">Hari Ini</span>
-          <span class="stat-value">{{ stats.today_logs || 0 }}</span>
+        <div class="form-group mb-0">
+          <label>Activity</label>
+          <input v-model="filters.activity" placeholder="Cari activity..." @input="loadLogs" />
+        </div>
+        <div class="form-group mb-0">
+          <label>Entity Type</label>
+          <select v-model="filters.entity_type" @change="loadLogs">
+            <option value="">Semua Entity</option>
+            <option value="user">User</option>
+            <option value="product">Product</option>
+            <option value="category">Category</option>
+            <option value="customer">Customer</option>
+            <option value="invoice">Invoice</option>
+          </select>
+        </div>
+        <div class="form-group mb-0">
+          <label>Tanggal Mulai</label>
+          <input v-model="filters.start_date" type="date" @change="loadLogs" />
+        </div>
+        <div class="form-group mb-0">
+          <label>Tanggal Akhir</label>
+          <input v-model="filters.end_date" type="date" @change="loadLogs" />
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <table>
-        <thead>
-          <tr>
-            <th>Tanggal</th>
-            <th>User</th>
-            <th>Activity</th>
-            <th>Entity</th>
-            <th>Detail</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="log in logs" :key="log.id">
-            <td>{{ formatDate(log.created_at) }}</td>
-            <td>{{ log.user_name || 'System' }}</td>
-            <td><span class="activity-badge">{{ log.activity }}</span></td>
-            <td>{{ log.entity_type || '-' }} {{ log.entity_id ? `#${log.entity_id}` : '' }}</td>
-            <td>
-              <button class="btn btn-primary btn-sm" @click="showDetail(log)">Detail</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="logs.length === 0" class="empty">Tidak ada audit log ditemukan</p>
+    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+      <div class="stat-card">
+        <div class="flex items-center gap-4">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-600">
+            <ClipboardList class="h-6 w-6" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Total Logs</p>
+            <p class="text-2xl font-bold text-slate-900">{{ stats.total_logs || 0 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-center gap-4">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-success-50 text-success-600">
+            <Calendar class="h-6 w-6" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Hari Ini</p>
+            <p class="text-2xl font-bold text-slate-900">{{ stats.today_logs || 0 }}</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="pagination" v-if="pagination.pages > 1">
-      <button class="btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
-      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
-      <button class="btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+    <div class="table-card">
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>User</th>
+              <th>Activity</th>
+              <th>Entity</th>
+              <th class="text-right">Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in logs" :key="log.id">
+              <td>{{ formatDate(log.created_at) }}</td>
+              <td class="font-medium text-slate-900">{{ log.user_name || 'System' }}</td>
+              <td><span class="badge badge-primary">{{ log.activity }}</span></td>
+              <td>{{ log.entity_type || '-' }} {{ log.entity_id ? `#${log.entity_id}` : '' }}</td>
+              <td class="text-right">
+                <button class="btn btn-icon-sm btn-secondary" title="Detail" @click="showDetail(log)">
+                  <Eye class="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="logs.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <ClipboardList class="h-7 w-7" />
+        </div>
+        <p class="text-sm font-medium text-slate-500">Tidak ada audit log ditemukan</p>
+      </div>
+
+      <div class="pagination" v-if="pagination.pages > 1">
+        <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+        <div class="flex gap-2">
+          <button class="page-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+          <button class="page-btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+        </div>
+      </div>
     </div>
 
     <div v-if="selectedLog" class="modal-overlay" @click.self="selectedLog = null">
-      <div class="modal card">
-        <h3>Detail Audit Log</h3>
-        <div class="detail-row">
-          <label>ID:</label>
-          <span>{{ selectedLog.id }}</span>
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Detail Audit Log</h3>
+          <button class="btn btn-ghost btn-icon-sm" title="Tutup" @click="selectedLog = null">
+            <X class="h-4 w-4" />
+          </button>
         </div>
-        <div class="detail-row">
-          <label>Tanggal:</label>
-          <span>{{ formatDate(selectedLog.created_at) }}</span>
+        <div class="modal-body">
+          <div class="detail-row">
+            <label>ID:</label>
+            <span>{{ selectedLog.id }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Tanggal:</label>
+            <span>{{ formatDate(selectedLog.created_at) }}</span>
+          </div>
+          <div class="detail-row">
+            <label>User:</label>
+            <span>{{ selectedLog.user_name || 'System' }} ({{ selectedLog.user_email }})</span>
+          </div>
+          <div class="detail-row">
+            <label>Activity:</label>
+            <span>{{ selectedLog.activity }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Entity:</label>
+            <span>{{ selectedLog.entity_type || '-' }} {{ selectedLog.entity_id ? `#${selectedLog.entity_id}` : '' }}</span>
+          </div>
+          <div class="detail-row" v-if="selectedLog.metadata">
+            <label>Metadata:</label>
+            <pre>{{ JSON.stringify(selectedLog.metadata, null, 2) }}</pre>
+          </div>
         </div>
-        <div class="detail-row">
-          <label>User:</label>
-          <span>{{ selectedLog.user_name || 'System' }} ({{ selectedLog.user_email }})</span>
-        </div>
-        <div class="detail-row">
-          <label>Activity:</label>
-          <span>{{ selectedLog.activity }}</span>
-        </div>
-        <div class="detail-row">
-          <label>Entity:</label>
-          <span>{{ selectedLog.entity_type || '-' }} {{ selectedLog.entity_id ? `#${selectedLog.entity_id}` : '' }}</span>
-        </div>
-        <div class="detail-row" v-if="selectedLog.metadata">
-          <label>Metadata:</label>
-          <pre>{{ JSON.stringify(selectedLog.metadata, null, 2) }}</pre>
-        </div>
-        <div class="form-actions">
+        <div class="modal-footer">
           <button class="btn btn-primary" @click="selectedLog = null">Tutup</button>
         </div>
       </div>
@@ -124,6 +156,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { ClipboardList, Calendar, Eye, X } from 'lucide-vue-next'
 
 const logs = ref([])
 const users = ref([])
@@ -182,23 +215,29 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.filter-group { flex: 1; min-width: 150px; }
-.filter-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.25rem; }
-.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-.stat-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; }
-.stat-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--primary-light); border-radius: var(--radius-md); }
-.stat-label { display: block; font-size: 0.875rem; color: var(--secondary); font-weight: 500; }
-.stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: #1f2937; }
-.activity-badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; background: #dbeafe; color: #1e40af; }
-.empty { color: var(--secondary); text-align: center; padding: 3rem 1rem; }
-.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
-.detail-row { display: flex; margin-bottom: 0.75rem; }
-.detail-row label { font-weight: 600; min-width: 100px; color: var(--secondary); }
-.detail-row pre { background: var(--surface); padding: 0.75rem; border-radius: var(--radius-sm); overflow-x: auto; flex: 1; font-size: 0.8rem; }
-.form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+.detail-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.detail-row label {
+  flex-shrink: 0;
+  min-width: 100px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.detail-row span {
+  color: #334155;
+}
+
+.detail-row pre {
+  flex: 1;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0.75rem;
+  font-size: 0.8rem;
+}
 </style>

@@ -1,25 +1,32 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
-      <h1>Daftar Invoice</h1>
-    </div>
-    <div class="filters card">
-      <div class="filter-group">
-        <label>Cari</label>
-        <input v-model="search" placeholder="No. invoice..." @input="onFilterChange" class="form-control" />
-      </div>
-      <div class="filter-group">
-        <label>Status</label>
-        <select v-model="statusFilter" @change="onFilterChange" class="form-control">
-          <option value="">Semua Status</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
-        </select>
+      <div>
+        <h1 class="page-title">Daftar Invoice</h1>
+        <p class="page-subtitle">Lihat dan lacak seluruh transaksi penjualan</p>
       </div>
     </div>
-    <div class="card table-container" style="margin-top: 1rem">
-      <div class="table-responsive">
-        <table>
+
+    <div class="card mb-6">
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="form-group mb-0 md:col-span-2">
+          <label>Cari</label>
+          <input v-model="search" placeholder="No. invoice..." @input="onFilterChange" />
+        </div>
+        <div class="form-group mb-0">
+          <label>Status</label>
+          <select v-model="statusFilter" @change="onFilterChange">
+            <option value="">Semua Status</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="overflow-x-auto">
+        <table class="table">
           <thead>
             <tr>
               <th>No. Invoice</th>
@@ -33,24 +40,37 @@
           </thead>
           <tbody>
             <tr v-for="inv in invoices" :key="inv.id">
-              <td class="font-medium">{{ inv.invoice_number }}</td>
+              <td class="font-mono text-sm font-semibold text-slate-900">{{ inv.invoice_number }}</td>
               <td>{{ formatDate(inv.created_at) }}</td>
-              <td>{{ formatCurrency(inv.total_amount) }}</td>
-              <td class="text-center"><span :class="['payment-badge', inv.payment_method]">{{ inv.payment_method }}</span></td>
-              <td class="text-center"><span :class="['status-badge', inv.payment_status]">{{ inv.payment_status }}</span></td>
-              <td class="text-center"><span :class="['sync-badge', inv.sync_status]">{{ inv.sync_status }}</span></td>
-              <td class="text-center"><router-link :to="`/invoices/${inv.id}`" class="btn btn-primary btn-sm">Detail</router-link></td>
+              <td class="font-medium">{{ formatCurrency(inv.total_amount) }}</td>
+              <td class="text-center"><span class="badge" :class="inv.payment_method">{{ inv.payment_method }}</span></td>
+              <td class="text-center"><span class="badge" :class="inv.payment_status">{{ inv.payment_status }}</span></td>
+              <td class="text-center"><span class="badge" :class="inv.sync_status">{{ inv.sync_status }}</span></td>
+              <td class="text-center">
+                <router-link :to="`/invoices/${inv.id}`" class="btn btn-primary btn-sm">
+                  <Eye class="h-3.5 w-3.5" />
+                  Detail
+                </router-link>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p v-if="invoices.length === 0" class="empty">Tidak ada invoice ditemukan</p>
-    </div>
 
-    <div class="pagination" v-if="pagination.pages > 1">
-      <button class="btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
-      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
-      <button class="btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+      <div v-if="invoices.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <Receipt class="h-7 w-7" />
+        </div>
+        <p class="text-sm font-medium text-slate-500">Tidak ada invoice ditemukan</p>
+      </div>
+
+      <div class="pagination" v-if="pagination.pages > 1">
+        <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+        <div class="flex gap-2">
+          <button class="page-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+          <button class="page-btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -58,6 +78,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { Eye, Receipt } from 'lucide-vue-next'
 
 const invoices = ref([])
 const search = ref('')
@@ -100,49 +121,35 @@ onMounted(load)
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.filters { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
-.filter-group { flex: 1; }
-.filter-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--secondary, #6b7280); margin-bottom: 0.5rem; }
-.form-control { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; outline: none; transition: border-color 0.2s; }
-.form-control:focus { border-color: #3b82f6; }
-
-/* Perbaikan Layout Tabel */
-.table-container { padding: 0; overflow: hidden; }
-.table-responsive { overflow-x: auto; width: 100%; }
-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem; }
-th { font-weight: 600; color: #374151; background-color: #f9fafb; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-td { color: #4b5563; }
-tbody tr { transition: background-color 0.2s; }
-tbody tr:hover { background-color: #f9fafb; }
-.font-medium { font-weight: 600; color: #111827; }
-.text-center { text-align: center; }
-
-/* Perbaikan Badge */
-.payment-badge, .status-badge, .sync-badge { 
-  display: inline-flex; 
-  align-items: center; 
-  justify-content: center; 
-  padding: 0.25rem 0.75rem; 
-  border-radius: 9999px; 
-  font-size: 0.75rem; 
-  font-weight: 600; 
-  text-transform: capitalize; 
+.badge {
+  text-transform: capitalize;
 }
-.payment-badge.cash { background: #d1fae5; color: #065f46; }
-.payment-badge.qris { background: #dbeafe; color: #1e40af; }
-.payment-badge.transfer { background: #fef3c7; color: #92400e; }
-.payment-badge.ewallet { background: #fce7f3; color: #9d174d; }
 
-.status-badge.paid { background: #d1fae5; color: #065f46; }
-.status-badge.pending { background: #fef3c7; color: #92400e; }
+.badge.cash,
+.badge.paid,
+.badge.synced {
+  background: #d1fae5;
+  color: #065f46;
+}
 
-.sync-badge.synced { background: #d1fae5; color: #065f46; }
-.sync-badge.pending { background: #fef3c7; color: #92400e; }
-.sync-badge.failed { background: #fee2e2; color: #991b1b; }
+.badge.qris {
+  background: #dbeafe;
+  color: #1e40af;
+}
 
-.empty { color: var(--secondary, #6b7280); text-align: center; padding: 3rem 1rem; font-size: 0.875rem; }
-.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
+.badge.transfer,
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge.ewallet {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
 </style>

@@ -1,27 +1,39 @@
 <template>
-  <div>
-    <div class="mb-8">
-      <h1 class="text-2xl font-bold text-slate-900">Transaksi Penjualan</h1>
-      <p class="mt-1 text-sm text-slate-500">Buat transaksi penjualan baru</p>
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Transaksi Penjualan</h1>
+        <p class="page-subtitle">Buat transaksi penjualan baru</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="badge badge-primary">
+          <ShoppingCart class="h-3.5 w-3.5" />
+          {{ cart.totalItems }} item
+        </span>
+        <span v-if="cart.items.length" class="badge badge-slate">
+          {{ formatCurrency(cart.total) }}
+        </span>
+      </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
+    <div class="grid gap-6 lg:grid-cols-5">
       <!-- Bagian Kiri: Daftar Produk -->
-      <div class="lg:col-span-2">
+      <div class="lg:col-span-3">
         <div class="card">
-          <div class="mb-4 flex gap-3">
-            <div class="flex-1">
+          <div class="mb-5 flex flex-col gap-3 sm:flex-row">
+            <div class="relative flex-1">
+              <Search class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 v-model="search"
                 placeholder="Cari produk..."
                 @input="loadProducts"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2"
+                class="input pl-11"
               />
             </div>
             <select
               v-model="categoryFilter"
               @change="loadProducts"
-              class="w-48 rounded-lg border border-slate-300 px-3 py-2 bg-white"
+              class="input sm:w-56"
             >
               <option value="">Semua Kategori</option>
               <option v-for="c in productStore.categories" :key="c.id" :value="c.id">
@@ -30,56 +42,50 @@
             </select>
           </div>
 
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-[60vh] overflow-y-auto pr-2">
+          <div class="grid max-h-[60vh] gap-4 overflow-y-auto pr-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div
               v-for="product in productStore.products"
               :key="product.id"
               :class="[
-                'relative cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg',
+                'group relative flex h-full cursor-pointer flex-col rounded-3xl border-2 p-4 transition-all duration-200',
                 product.product_type === 'jasa' && product.service_status !== 'tersedia'
-                  ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
-                  : 'border-slate-200 bg-white hover:border-primary-500 hover:bg-primary-50/50'
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
+                  : (product.product_type === 'barang' && product.stock <= 0
+                      ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60'
+                      : 'border-slate-200 bg-white hover:-translate-y-1 hover:border-primary-400 hover:bg-primary-50/40 hover:shadow-bubble')
               ]"
               @click="product.product_type === 'jasa' && product.service_status !== 'tersedia' ? null : cart.addItem(product)"
             >
-              <div class="mb-2 flex flex-wrap gap-1">
+              <div class="mb-2 flex flex-wrap items-center gap-1.5">
                 <span
                   :class="[
-                    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase',
-                    product.product_type === 'barang'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-amber-100 text-amber-800'
+                    'badge',
+                    product.product_type === 'barang' ? 'badge-primary' : 'badge-warning'
                   ]"
                 >
                   {{ product.product_type === 'barang' ? 'Barang' : 'Jasa' }}
                 </span>
                 <span
                   v-if="product.category_id"
-                  class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                  class="chip"
                 >
                   {{ getCategoryName(product.category_id) }}
                 </span>
               </div>
 
               <h4 class="mb-1 font-semibold text-slate-900 line-clamp-2">{{ product.product_name }}</h4>
-              <p class="mb-2 text-lg font-bold text-primary-600">{{ formatCurrency(product.price) }}</p>
+              <p class="mb-3 text-lg font-bold text-primary-600">{{ formatCurrency(product.price) }}</p>
 
               <div class="mt-auto">
                 <span
                   v-if="product.product_type === 'barang'"
-                  :class="product.stock <= 10 ? 'text-danger-600 font-semibold' : 'text-slate-600'"
-                  class="text-sm"
+                  :class="['badge', product.stock <= 10 ? 'badge-danger' : 'badge-slate']"
                 >
                   Stok: {{ product.stock }}
                 </span>
                 <span
                   v-else
-                  :class="[
-                    'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold',
-                    product.service_status === 'tersedia'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-slate-100 text-slate-600'
-                  ]"
+                  :class="['badge', product.service_status === 'tersedia' ? 'badge-success' : 'badge-slate']"
                 >
                   {{ product.service_status === 'tersedia' ? '✓ Tersedia' : '✗ Tidak Tersedia' }}
                 </span>
@@ -90,16 +96,22 @@
       </div>
 
       <!-- Bagian Kanan: Keranjang -->
-      <div class="lg:col-span-1">
-        <div class="card sticky top-8">
+      <div class="lg:col-span-2">
+        <div class="card lg:sticky lg:top-6">
 
-          <div class="mb-5 border-b border-slate-200 pb-4">
-            <h3 class="text-lg font-semibold text-slate-900 mb-3">Keranjang</h3>
-            <div class="space-y-1">
-              <label class="text-sm font-medium text-slate-700">Pilih Pelanggan:</label>
+          <div class="mb-5 border-b border-slate-100 pb-4">
+            <div class="mb-3 flex items-center justify-between">
+              <h3 class="section-title flex items-center gap-2">
+                <ShoppingCart class="h-4 w-4 text-primary-500" />
+                Keranjang
+              </h3>
+              <span v-if="cart.items.length" class="badge badge-primary">{{ cart.totalItems }} item</span>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-semibold text-slate-700">Pilih Pelanggan:</label>
               <select
                 v-model="selectedCustomerId"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
+                class="input"
               >
                 <option :value="null">Walk-in Customer (Umum)</option>
                 <option
@@ -114,23 +126,24 @@
             </div>
           </div>
 
-          <div v-if="cart.items.length" class="space-y-3 max-h-64 overflow-y-auto">
+          <div v-if="cart.items.length" class="max-h-72 space-y-2.5 overflow-y-auto pr-1">
             <div
               v-for="item in cart.items"
               :key="item.product_id"
-              class="flex items-center gap-3 rounded-lg bg-slate-50 p-3"
+              class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 transition-colors hover:bg-slate-100/70"
             >
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-slate-900 truncate">{{ item.product_name }}</p>
                 <p class="text-sm text-slate-500">{{ formatCurrency(item.price) }}</p>
               </div>
 
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1.5">
                 <button
                   @click="cart.updateQuantity(item.product_id, item.quantity - 1)"
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-600 transition-all hover:bg-slate-300"
+                  :disabled="item.quantity <= 1"
+                  class="btn btn-secondary btn-icon-sm"
                 >
-                  <Minus class="h-4 w-4" />
+                  <Minus class="h-3.5 w-3.5" />
                 </button>
                 <input
                   type="number"
@@ -138,43 +151,48 @@
                   min="1"
                   :max="item.product_type === 'barang' ? item.stock : 999"
                   @change="cart.updateQuantity(item.product_id, +$event.target.value)"
-                  class="w-12 rounded-lg border border-slate-300 px-2 py-1 text-center text-sm"
+                  class="w-12 rounded-full border border-slate-200 bg-white px-1 py-1.5 text-center text-sm font-semibold text-slate-800 transition-all focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10"
                 />
                 <button
                   @click="cart.updateQuantity(item.product_id, item.quantity + 1)"
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-600 transition-all hover:bg-slate-300"
+                  class="btn btn-secondary btn-icon-sm"
                 >
-                  <Plus class="h-4 w-4" />
+                  <Plus class="h-3.5 w-3.5" />
                 </button>
               </div>
 
               <button
                 @click="cart.removeItem(item.product_id)"
-                class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-danger-600 transition-all hover:bg-red-100"
+                class="btn btn-icon-sm text-danger-600 hover:bg-danger-50 hover:text-danger-700"
               >
                 <Trash2 class="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center justify-center py-8 text-slate-500">
-            <ShoppingCart class="h-8 w-8 mb-2 opacity-50" />
-            <p class="text-sm">Keranjang kosong</p>
+          <div v-else class="empty-state">
+            <div class="empty-icon">
+              <ShoppingCart class="h-7 w-7" />
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700">Keranjang kosong</p>
+              <p class="text-sm text-slate-500">Pilih produk untuk memulai transaksi.</p>
+            </div>
           </div>
 
-          <div class="mt-4 border-t border-slate-200 pt-4">
+          <div class="mt-5 border-t border-slate-100 pt-4">
             <div class="flex items-center justify-between">
-              <span class="text-lg font-semibold text-slate-900">Total</span>
-              <span class="text-2xl font-bold text-primary-600">{{ formatCurrency(cart.total) }}</span>
+              <span class="text-base font-semibold text-slate-700">Total</span>
+              <span class="text-2xl font-extrabold text-primary-600">{{ formatCurrency(cart.total) }}</span>
             </div>
           </div>
 
           <div v-if="cart.items.length" class="mt-6">
             <div class="mb-4 flex items-center justify-between">
-              <label class="font-medium text-slate-900">Metode Pembayaran</label>
+              <label class="font-semibold text-slate-900">Metode Pembayaran</label>
               <button
                 @click="addPaymentEntry"
-                class="flex items-center gap-1 text-sm font-medium text-primary-600 transition-all hover:text-primary-700"
+                class="btn btn-ghost btn-sm text-primary-600 hover:bg-primary-50 hover:text-primary-700"
               >
                 <Plus class="h-4 w-4" />
                 Tambah
@@ -185,17 +203,17 @@
               <div
                 v-for="(entry, index) in paymentEntries"
                 :key="index"
-                class="rounded-lg bg-slate-50 p-4"
+                class="rounded-3xl border border-slate-100 bg-slate-50/80 p-4"
               >
                 <div class="mb-3 grid grid-cols-2 gap-2">
                   <button
                     v-for="method in paymentMethods"
                     :key="method.value"
                     :class="[
-                      'flex items-center justify-center gap-2 rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all',
+                      'flex items-center justify-center gap-2 rounded-2xl border-2 px-3 py-2.5 text-sm font-semibold transition-all',
                       entry.method === method.value
                         ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-primary-300 hover:bg-primary-50/40'
                     ]"
                     @click="entry.method = method.value"
                   >
@@ -204,51 +222,47 @@
                   </button>
                 </div>
 
-                <div class="form-group mb-2">
-                  <label class="block text-sm text-slate-700 mb-1">Jumlah</label>
+                <div class="form-group mb-3">
+                  <label>Jumlah</label>
                   <input
                     v-model.number="entry.amount"
                     type="number"
                     min="0"
                     :placeholder="String(cart.total)"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
                 </div>
 
                 <template v-if="entry.method === 'cash'">
-                  <div class="form-group mb-2">
-                    <label class="block text-sm text-slate-700 mb-1">Uang Diterima</label>
+                  <div class="form-group mb-3">
+                    <label>Uang Diterima</label>
                     <input
                       v-model.number="entry.paidAmount"
                       type="number"
                       min="0"
                       placeholder="0"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     />
                   </div>
                   <div
                     v-if="entry.paidAmount >= entry.amount"
-                    class="rounded-lg bg-green-50 p-3 text-center text-sm font-medium text-green-700 mt-2"
+                    class="mt-2 rounded-2xl bg-success-50 p-3 text-center text-sm font-semibold text-success-700 ring-1 ring-inset ring-success-100"
                   >
                     Kembalian: {{ formatCurrency(entry.paidAmount - entry.amount) }}
                   </div>
                 </template>
 
                 <template v-else>
-                  <div class="form-group mb-2">
-                    <label class="block text-sm text-slate-700 mb-1">Provider</label>
+                  <div class="form-group mb-3">
+                    <label>Provider</label>
                     <input
                       v-model="entry.provider"
                       placeholder="GoPay, BCA, dll"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     />
                   </div>
-                  <div class="form-group mb-2">
-                    <label class="block text-sm text-slate-700 mb-1">Nomor Referensi</label>
+                  <div class="form-group mb-3">
+                    <label>Nomor Referensi</label>
                     <input
                       v-model="entry.paymentReference"
                       placeholder="Nomor referensi"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     />
                   </div>
                 </template>
@@ -256,14 +270,14 @@
                 <button
                   v-if="paymentEntries.length > 1"
                   @click="removePaymentEntry(index)"
-                  class="mt-2 w-full rounded-lg bg-red-50 py-2 text-sm font-medium text-danger-600 transition-all hover:bg-red-100"
+                  class="btn btn-ghost btn-sm mt-2 w-full text-danger-600 hover:bg-danger-50 hover:text-danger-700"
                 >
                   Hapus Pembayaran
                 </button>
               </div>
             </div>
 
-            <div class="mt-4 rounded-lg bg-slate-100 p-4">
+            <div class="mt-4 rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
               <div class="flex items-center justify-between py-2">
                 <span class="text-sm text-slate-600">Total Tagihan</span>
                 <span class="font-semibold text-slate-900">{{ formatCurrency(cart.total) }}</span>
@@ -273,41 +287,50 @@
                 <span
                   :class="[
                     'font-semibold',
-                    totalPaid >= cart.total ? 'text-green-600' : 'text-danger-600'
+                    totalPaid >= cart.total ? 'text-success-600' : 'text-danger-600'
                   ]"
                 >
                   {{ formatCurrency(totalPaid) }}
                 </span>
               </div>
-              <div v-if="totalPaid > cart.total" class="flex items-center justify-between py-2 border-t border-slate-200">
+              <div v-if="totalPaid > cart.total" class="flex items-center justify-between border-t border-slate-200 py-2">
                 <span class="text-sm text-slate-600">Kembalian</span>
-                <span class="font-semibold text-green-600">{{ formatCurrency(totalPaid - cart.total) }}</span>
+                <span class="font-semibold text-success-600">{{ formatCurrency(totalPaid - cart.total) }}</span>
               </div>
-              <div v-if="totalPaid < cart.total" class="flex items-center justify-between py-2 border-t border-slate-200">
+              <div v-if="totalPaid < cart.total" class="flex items-center justify-between border-t border-slate-200 py-2">
                 <span class="text-sm text-slate-600">Kurang Bayar</span>
                 <span class="font-semibold text-danger-600">{{ formatCurrency(cart.total - totalPaid) }}</span>
               </div>
             </div>
 
             <div class="mt-4 space-y-3">
-              <label class="flex items-center gap-2 cursor-pointer">
+              <label class="flex cursor-pointer items-center gap-2.5 rounded-2xl bg-slate-50/80 px-4 py-3 ring-1 ring-inset ring-slate-100 transition-colors hover:bg-slate-100/70">
                 <input
                   v-model="allowPartialPayment"
                   type="checkbox"
                   class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span class="text-sm text-slate-700">Izinkan pembayaran sebagian</span>
+                <span class="text-sm font-medium text-slate-700">Izinkan pembayaran sebagian</span>
               </label>
 
               <button
                 @click="checkout"
                 :disabled="processing || (totalPaid < cart.total && !allowPartialPayment)"
-                class="w-full rounded-lg bg-primary-600 py-3 font-semibold text-white transition-all hover:bg-primary-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                class="btn btn-primary btn-lg w-full"
               >
+                <span v-if="processing" class="spinner h-4 w-4 border-white/40 border-t-white"></span>
                 {{ processing ? 'Memproses...' : (allowPartialPayment && totalPaid < cart.total ? 'Buat Invoice (Partial)' : 'Bayar & Cetak Invoice') }}
               </button>
 
-              <p v-if="allowPartialPayment && totalPaid < cart.total" class="text-center text-sm text-amber-600">
+              <button
+                @click="cart.clear()"
+                class="btn btn-secondary w-full"
+              >
+                <Trash2 class="h-4 w-4" />
+                Kosongkan Keranjang
+              </button>
+
+              <p v-if="allowPartialPayment && totalPaid < cart.total" class="text-center text-sm text-warning-600">
                 Invoice akan dibuat dengan status "Partially Paid". Sisa pembayaran dapat dilakukan nanti.
               </p>
             </div>
@@ -323,7 +346,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useProductStore } from '@/stores/products'
-import { Plus, Minus, Trash2, ShoppingCart, DollarSign, Smartphone, Building2, Wallet } from 'lucide-vue-next'
+import { Plus, Minus, Trash2, ShoppingCart, DollarSign, Smartphone, Building2, Wallet, Search } from 'lucide-vue-next'
+import { toast } from '@/composables/feedback'
 import api from '@/services/api'
 
 const cart = useCartStore()
@@ -400,12 +424,15 @@ async function loadCustomers() {
 // Sinkronkan pilihan dropdown ke store cart
 watch(selectedCustomerId, (newId) => {
   const selected = customers.value.find(c => (c.id || c.customer_id) === newId)
-  cart.setCustomer(selected || null)
+  cart.setCustomer(
+    selected ? (selected.id || selected.customer_id) : null,
+    selected ? (selected.nama || selected.customer_name || selected.name) : 'Walk-in Customer'
+  )
 })
 
 async function checkout() {
   if (!allowPartialPayment.value && totalPaid.value < cart.total) {
-    alert('Total pembayaran kurang dari tagihan')
+    toast.error('Total pembayaran kurang dari tagihan')
     return
   }
 
@@ -450,7 +477,7 @@ async function checkout() {
 
     router.push(`/invoices/${data.data.invoice.id}`)
   } catch (e) {
-    alert(e.response?.data?.message || 'Transaksi gagal')
+    toast.error(e.response?.data?.message || 'Transaksi gagal')
   } finally {
     processing.value = false
   }

@@ -1,65 +1,107 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
-      <h1>Manajemen Pengguna</h1>
-      <button class="btn btn-primary" @click="openForm()">+ Tambah Pengguna</button>
+      <div>
+        <h1 class="page-title">Manajemen Pengguna</h1>
+        <p class="page-subtitle">Kelola akun, role dan status pengguna</p>
+      </div>
+      <button class="btn btn-primary" @click="openForm()">
+        <Plus class="h-4 w-4" />
+        Tambah Pengguna
+      </button>
     </div>
-    <div class="card table-container" style="margin-top: 1rem">
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th>Nama</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th style="text-align: center;">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in users" :key="u.id">
-            <td>{{ u.name }}</td>
-            <td>{{ u.email }}</td>
-            <td><span :class="['role-badge', u.role_id]">{{ roleName(u.role_id) }}</span></td>
-            <td><span :class="['status-badge', u.is_active ? 'active' : 'inactive']">{{ u.is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-primary btn-sm" @click="openForm(u)">Edit</button>
-                <button class="btn btn-danger btn-sm" @click="deleteUser(u.id)">Hapus</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="users.length === 0" class="empty">Tidak ada pengguna ditemukan</p>
+
+    <div class="table-card">
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in users" :key="u.id">
+              <td class="font-medium">{{ u.name }}</td>
+              <td class="text-slate-600">{{ u.email }}</td>
+              <td>
+                <span
+                  :class="[
+                    'badge',
+                    String(u.role_id) === '1'
+                      ? 'badge-primary'
+                      : String(u.role_id) === '2'
+                        ? 'badge-warning'
+                        : 'badge-success'
+                  ]"
+                >
+                  {{ roleName(u.role_id) }}
+                </span>
+              </td>
+              <td>
+                <span :class="['badge', u.is_active ? 'badge-success' : 'badge-slate']">
+                  {{ u.is_active ? 'Aktif' : 'Nonaktif' }}
+                </span>
+              </td>
+              <td>
+                <div class="flex justify-center gap-2">
+                  <button class="btn btn-secondary btn-icon-sm" title="Edit" @click="openForm(u)">
+                    <Pencil class="h-4 w-4" />
+                  </button>
+                  <button class="btn btn-danger btn-icon-sm" title="Hapus" @click="deleteUser(u.id)">
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="users.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <Users class="h-7 w-7" />
+        </div>
+        <p>Tidak ada pengguna ditemukan</p>
+      </div>
     </div>
 
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
-      <div class="modal card">
-        <h3>{{ form.id ? 'Edit' : 'Tambah' }} Pengguna</h3>
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ form.id ? 'Edit' : 'Tambah' }} Pengguna</h3>
+          <button class="btn btn-ghost btn-icon-sm" title="Tutup" @click="showForm = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
         <form @submit.prevent="saveUser">
-          <div class="form-group"><label>Nama</label><input v-model="form.name" required /></div>
-          <div class="form-group"><label>Email</label><input v-model="form.email" type="email" required /></div>
-          <div class="form-group">
-            <label>Role</label>
-            <select v-model="form.role_id" required>
-              <option value="1">Administrator</option>
-              <option value="2">Manager</option>
-              <option value="3">Cashier</option>
-            </select>
+          <div class="modal-body">
+            <div class="form-group"><label>Nama</label><input v-model="form.name" required /></div>
+            <div class="form-group"><label>Email</label><input v-model="form.email" type="email" required /></div>
+            <div class="form-group">
+              <label>Role</label>
+              <select v-model="form.role_id" required>
+                <option value="1">Administrator</option>
+                <option value="2">Manager</option>
+                <option value="3">Cashier</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Password {{ form.id ? '(kosongkan jika tidak diubah)' : '' }}</label>
+              <input v-model="form.password" type="password" :required="!form.id" />
+            </div>
+            <div class="form-group mb-0">
+              <label>Status</label>
+              <select v-model="form.is_active">
+                <option :value="1">Aktif</option>
+                <option :value="0">Nonaktif</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Password {{ form.id ? '(kosongkan jika tidak diubah)' : '' }}</label>
-            <input v-model="form.password" type="password" :required="!form.id" />
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select v-model="form.is_active">
-              <option :value="1">Aktif</option>
-              <option :value="0">Nonaktif</option>
-            </select>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn" @click="showForm = false">Batal</button>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showForm = false">Batal</button>
             <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
         </form>
@@ -71,6 +113,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { Plus, Pencil, Trash2, Users, X } from 'lucide-vue-next'
+import { toast, confirmDialog } from '@/composables/feedback'
 
 const users = ref([])
 const showForm = ref(false)
@@ -108,17 +152,23 @@ async function saveUser() {
     form.value = { name: '', email: '', role_id: '3', password: '', is_active: 1 }
     await loadUsers()
   } catch (e) {
-    alert(e.response?.data?.message || 'Gagal menyimpan pengguna')
+    toast.error(e.response?.data?.message || 'Gagal menyimpan pengguna')
   }
 }
 
 async function deleteUser(id) {
-  if (confirm('Hapus pengguna ini?')) {
+  const confirmed = await confirmDialog('Hapus pengguna ini?', {
+    title: 'Hapus Pengguna',
+    confirmText: 'Ya, Hapus',
+    variant: 'danger'
+  })
+  if (confirmed) {
     try {
       await api.delete(`/users/${id}`)
+      toast.success('Pengguna berhasil dihapus')
       await loadUsers()
     } catch (e) {
-      alert(e.response?.data?.message || 'Gagal menghapus pengguna')
+      toast.error(e.response?.data?.message || 'Gagal menghapus pengguna')
     }
   }
 }
@@ -127,52 +177,3 @@ onMounted(async () => {
   await loadUsers()
 })
 </script>
-
-<style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { width: 100%; max-width: 500px; }
-.form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
-.role-badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; }
-.role-badge[class*="1"] { background: #dbeafe; color: #1e40af; }
-.role-badge[class*="2"] { background: #fef3c7; color: #92400e; }
-.role-badge[class*="3"] { background: #d1fae5; color: #065f46; }
-.status-badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; }
-.status-badge.active { background: #d1fae5; color: #065f46; }
-.status-badge.inactive { background: #f3f4f6; color: #6b7280; }
-.empty { color: var(--secondary); text-align: center; padding: 3rem 1rem; }
-
-/* Tambahan CSS untuk memperbaiki layout tabel */
-.table-container {
-  overflow-x: auto;
-}
-
-.custom-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.custom-table th, 
-.custom-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.custom-table th {
-  font-weight: 600;
-  color: #374151;
-  background-color: #f9fafb; 
-}
-
-.custom-table tbody tr:hover {
-  background-color: #f9fafb; 
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem; 
-  justify-content: center;
-}
-</style>

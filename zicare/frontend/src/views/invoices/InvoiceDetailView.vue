@@ -1,34 +1,45 @@
 <template>
-  <div>
-    <div class="mb-8 flex items-center justify-between no-print">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-900">Detail Invoice</h1>
-        <p class="mt-1 text-sm text-slate-500">{{ invoice?.invoice?.invoice_number }}</p>
+  <div class="page">
+    <div class="page-header no-print">
+      <div class="flex items-center gap-3">
+        <router-link
+          to="/invoices"
+          class="btn btn-icon btn-secondary shrink-0"
+          aria-label="Kembali ke daftar invoice"
+        >
+          <ArrowLeft class="h-5 w-5" />
+        </router-link>
+        <div>
+          <h1 class="page-title">Detail Invoice</h1>
+          <p class="page-subtitle">{{ invoice?.invoice?.invoice_number }}</p>
+        </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <button
           v-if="canContinuePayment"
           @click="showPaymentModal = true"
-          class="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-primary-700"
+          class="btn btn-primary"
         >
           <DollarSign class="h-4 w-4" />
           Lanjut Pembayaran
         </button>
         <button
           @click="printInvoice"
-          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
+          class="btn btn-secondary"
         >
+          <Printer class="h-4 w-4" />
           Cetak
         </button>
         <button
           @click="downloadPdf"
-          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
+          class="btn btn-secondary"
         >
+          <Download class="h-4 w-4" />
           Download PDF
         </button>
         <router-link
           to="/invoices"
-          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50"
+          class="btn btn-secondary"
         >
           Kembali
         </router-link>
@@ -39,103 +50,106 @@
       <!-- Invoice Details -->
       <div class="lg:col-span-2 space-y-6">
         <div class="card">
-          <div class="mb-6 border-b border-slate-200 pb-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-12 w-auto object-contain" />
-                <div>
-                  <h2 class="text-xl font-bold text-slate-900">INVOICE</h2>
-                  <p class="text-sm text-slate-500">{{ invoice.invoice.invoice_number }}</p>
-                </div>
+          <!-- Receipt header -->
+          <div class="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-dashed border-slate-200 pb-5">
+            <div class="flex items-center gap-4">
+              <img
+                src="@/assets/zicare-logo.jpg"
+                alt="Zi.CARE Logo"
+                class="h-14 w-14 rounded-2xl object-contain"
+              />
+              <div>
+                <h2 class="text-xl font-extrabold tracking-tight text-slate-900">INVOICE</h2>
+                <p class="font-mono text-sm text-slate-500">{{ invoice.invoice.invoice_number }}</p>
               </div>
-              <span
-                :class="[
-                  'inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold',
-                  getStatusClass(invoice.invoice.payment_status)
-                ]"
-              >
-                {{ getStatusLabel(invoice.invoice.payment_status) }}
-              </span>
             </div>
+            <span class="badge" :class="getStatusClass(invoice.invoice.payment_status)">
+              {{ getStatusLabel(invoice.invoice.payment_status) }}
+            </span>
           </div>
 
-          <div class="mb-6 grid gap-4 sm:grid-cols-2">
-            <div>
-              <p class="text-sm text-slate-500">Tanggal</p>
-              <p class="font-medium">{{ formatDate(invoice.invoice.created_at) }}</p>
+          <!-- Meta -->
+          <div class="mb-6 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl bg-slate-50/80 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Tanggal</p>
+              <p class="mt-1 font-semibold text-slate-800">{{ formatDate(invoice.invoice.created_at) }}</p>
             </div>
-            <div>
-              <p class="text-sm text-slate-500">Jatuh Tempo</p>
-              <p class="font-medium" :class="{ 'text-danger-600': isOverdue(invoice.invoice.due_date) }">
+            <div class="rounded-2xl bg-slate-50/80 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jatuh Tempo</p>
+              <p class="mt-1 font-semibold text-slate-800" :class="{ 'text-danger-600': isOverdue(invoice.invoice.due_date) }">
                 {{ formatDate(invoice.invoice.due_date) }}
               </p>
             </div>
-            <div>
-              <p class="text-sm text-slate-500">Kasir</p>
-              <p class="font-medium">{{ invoice.cashier?.name || '-' }}</p>
+            <div class="rounded-2xl bg-slate-50/80 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kasir</p>
+              <p class="mt-1 font-semibold text-slate-800">{{ invoice.cashier?.name || '-' }}</p>
             </div>
-            <div>
-              <p class="text-sm text-slate-500">Pelanggan</p>
-              <p class="font-medium">{{ invoice.customer?.customer_name || 'Walk-in Customer' }}</p>
+            <div class="rounded-2xl bg-slate-50/80 p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Pelanggan</p>
+              <p class="mt-1 font-semibold text-slate-800">{{ invoice.customer?.customer_name || 'Walk-in Customer' }}</p>
             </div>
           </div>
 
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Produk</th>
-                <th class="text-center">Qty</th>
-                <th class="text-right">Harga</th>
-                <th class="text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in invoice.details" :key="item.id">
-                <td class="font-medium">{{ item.product_name }}</td>
-                <td class="text-center">{{ item.quantity }}</td>
-                <td class="text-right">{{ formatCurrency(item.price) }}</td>
-                <td class="text-right font-medium">{{ formatCurrency(item.subtotal) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Items -->
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Harga</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in invoice.details" :key="item.id">
+                  <td class="font-medium">{{ item.product_name }}</td>
+                  <td class="text-center">{{ item.quantity }}</td>
+                  <td class="text-right">{{ formatCurrency(item.price) }}</td>
+                  <td class="text-right font-semibold">{{ formatCurrency(item.subtotal) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          <div class="mt-6 rounded-lg bg-slate-50 p-4">
-            <div class="flex justify-between">
-              <span class="text-slate-600">Total Tagihan</span>
-              <span class="text-xl font-bold">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
+          <!-- Totals -->
+          <div class="mt-6 rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 to-primary-50/40 p-5">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-500">Total Tagihan</span>
+              <span class="text-xl font-extrabold text-slate-900">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
             </div>
-            <div class="mt-2 flex justify-between">
-              <span class="text-slate-600">Total Dibayar</span>
-              <span class="font-medium">{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-500">Total Dibayar</span>
+              <span class="font-semibold text-success-600">{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
             </div>
-            <div v-if="invoice.invoice.outstanding_balance > 0" class="mt-2 flex justify-between border-t border-slate-200 pt-2">
-              <span class="font-semibold text-slate-900">Sisa Pembayaran</span>
-              <span class="text-lg font-bold text-danger-600">
+            <div v-if="invoice.invoice.outstanding_balance > 0" class="mt-3 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
+              <span class="text-sm font-semibold text-slate-900">Sisa Pembayaran</span>
+              <span class="text-lg font-extrabold text-danger-600">
                 {{ formatCurrency(invoice.invoice.outstanding_balance) }}
               </span>
             </div>
-            <div v-if="invoice.invoice.change_amount > 0" class="mt-2 flex justify-between">
-              <span class="text-slate-600">Kembalian</span>
-              <span class="font-medium text-green-600">{{ formatCurrency(invoice.invoice.change_amount) }}</span>
+            <div v-if="invoice.invoice.change_amount > 0" class="mt-3 flex items-center justify-between">
+              <span class="text-sm font-medium text-slate-500">Kembalian</span>
+              <span class="font-semibold text-success-600">{{ formatCurrency(invoice.invoice.change_amount) }}</span>
             </div>
           </div>
         </div>
 
         <!-- Payment History -->
         <div class="card">
-          <h3 class="mb-4 text-lg font-semibold">Riwayat Pembayaran</h3>
+          <h3 class="section-title mb-4">Riwayat Pembayaran</h3>
           <div v-if="paymentHistory.length > 0" class="space-y-3">
             <div
               v-for="(payment, index) in paymentHistory"
               :key="payment.id"
-              class="flex items-center justify-between rounded-lg bg-slate-50 p-4"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 transition-colors hover:bg-primary-50/40"
             >
               <div class="flex items-center gap-4">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-600">
                   {{ index + 1 }}
                 </div>
                 <div>
-                  <p class="font-medium">{{ formatCurrency(payment.amount) }}</p>
+                  <p class="font-semibold text-slate-800">{{ formatCurrency(payment.amount) }}</p>
                   <p class="text-sm text-slate-500">
                     {{ payment.payment_method }} • {{ formatDate(payment.payment_time) }}
                   </p>
@@ -147,9 +161,11 @@
               </div>
             </div>
           </div>
-          <div v-else class="flex flex-col items-center justify-center py-8 text-slate-500">
-            <Receipt class="h-8 w-8 mb-2 opacity-50" />
-            <p class="text-sm">Belum ada pembayaran</p>
+          <div v-else class="empty-state">
+            <div class="empty-icon">
+              <Receipt class="h-7 w-7" />
+            </div>
+            <p class="text-sm text-slate-500">Belum ada pembayaran</p>
           </div>
         </div>
       </div>
@@ -157,16 +173,16 @@
       <!-- Payment Progress -->
       <div class="lg:col-span-1">
         <div class="card">
-          <h3 class="mb-4 text-lg font-semibold">Progress Pembayaran</h3>
-          
+          <h3 class="section-title mb-4">Progress Pembayaran</h3>
+
           <div class="mb-4">
             <div class="mb-2 flex justify-between text-sm">
-              <span class="text-slate-600">Persentase</span>
-              <span class="font-semibold">{{ paymentPercentage }}%</span>
+              <span class="text-slate-500">Persentase</span>
+              <span class="font-bold text-slate-800">{{ paymentPercentage }}%</span>
             </div>
-            <div class="h-3 w-full rounded-full bg-slate-200">
+            <div class="h-3 w-full overflow-hidden rounded-full bg-slate-100">
               <div
-                class="h-full rounded-full transition-all"
+                class="h-full rounded-full transition-all duration-500"
                 :class="progressBarClass"
                 :style="{ width: paymentPercentage + '%' }"
               ></div>
@@ -175,22 +191,24 @@
 
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Total Tagihan</span>
-              <span class="font-medium">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
+              <span class="text-sm text-slate-500">Total Tagihan</span>
+              <span class="font-semibold text-slate-800">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Dibayar</span>
-              <span class="font-medium text-green-600">{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
+              <span class="text-sm text-slate-500">Dibayar</span>
+              <span class="font-semibold text-success-600">{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
             </div>
-            <div v-if="invoice.invoice.outstanding_balance > 0" class="flex justify-between border-t border-slate-200 pt-3">
+            <div v-if="invoice.invoice.outstanding_balance > 0" class="flex justify-between border-t border-dashed border-slate-200 pt-3">
               <span class="text-sm font-semibold text-slate-900">Sisa</span>
               <span class="font-bold text-danger-600">{{ formatCurrency(invoice.invoice.outstanding_balance) }}</span>
             </div>
           </div>
 
-          <div v-if="invoice.invoice.payment_status === 'paid'" class="mt-6 rounded-lg bg-green-50 p-4 text-center">
-            <CheckCircle class="mx-auto h-8 w-8 text-green-600 mb-2" />
-            <p class="font-semibold text-green-800">LUNAS</p>
+          <div v-if="invoice.invoice.payment_status === 'paid'" class="mt-6 rounded-2xl bg-success-50 p-4 text-center">
+            <div class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-success-100">
+              <CheckCircle class="h-7 w-7 text-success-600" />
+            </div>
+            <p class="font-bold text-success-700">LUNAS</p>
           </div>
         </div>
       </div>
@@ -199,80 +217,84 @@
     <!-- Payment Modal -->
     <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
       <div class="modal">
-        <div class="mb-6 flex items-center justify-between">
-          <h3 class="text-lg font-semibold">Tambah Pembayaran</h3>
-          <button
-            @click="showPaymentModal = false"
-            class="rounded-lg p-2 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-
-        <div v-if="invoice" class="mb-6 rounded-lg bg-slate-50 p-4">
-          <div class="flex justify-between">
-            <span class="text-sm text-slate-600">Invoice</span>
-            <span class="font-mono font-semibold">{{ invoice.invoice.invoice_number }}</span>
-          </div>
-          <div class="mt-2 flex justify-between">
-            <span class="text-sm text-slate-600">Total Tagihan</span>
-            <span class="font-bold">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
-          </div>
-          <div class="mt-2 flex justify-between">
-            <span class="text-sm text-slate-600">Sudah Dibayar</span>
-            <span>{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
-          </div>
-          <div class="mt-2 flex justify-between border-t border-slate-200 pt-2">
-            <span class="text-sm font-semibold text-slate-900">Sisa Pembayaran</span>
-            <span class="text-lg font-bold text-danger-600">
-              {{ formatCurrency(invoice.invoice.outstanding_balance) }}
-            </span>
-          </div>
-        </div>
-
-        <form @submit.prevent="submitPayment">
-          <div class="form-group">
-            <label>Jumlah Pembayaran</label>
-            <input
-              v-model.number="paymentForm.amount"
-              type="number"
-              :max="invoice?.invoice.outstanding_balance"
-              min="1"
-              required
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-slate-500">
-              Maksimum: {{ formatCurrency(invoice?.invoice.outstanding_balance || 0) }}
-            </p>
+        <form @submit.prevent="submitPayment" class="flex flex-col">
+          <div class="modal-header">
+            <h3 class="modal-title">Tambah Pembayaran</h3>
+            <button
+              type="button"
+              @click="showPaymentModal = false"
+              class="btn-icon-sm btn btn-ghost"
+              aria-label="Tutup"
+            >
+              <X class="h-5 w-5" />
+            </button>
           </div>
 
-          <div class="form-group">
-            <label>Metode Pembayaran</label>
-            <select v-model="paymentForm.payment_method" class="w-full" required>
-              <option value="cash">Tunai</option>
-              <option value="qris">QRIS</option>
-              <option value="transfer">Transfer</option>
-              <option value="ewallet">E-Wallet</option>
-            </select>
-          </div>
-
-          <template v-if="paymentForm.payment_method !== 'cash'">
-            <div class="form-group">
-              <label>Provider</label>
-              <input v-model="paymentForm.provider" placeholder="GoPay, BCA, dll" class="w-full" />
+          <div class="modal-body">
+            <div v-if="invoice" class="mb-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
+              <div class="flex justify-between">
+                <span class="text-sm text-slate-500">Invoice</span>
+                <span class="font-mono font-semibold text-slate-800">{{ invoice.invoice.invoice_number }}</span>
+              </div>
+              <div class="mt-2 flex justify-between">
+                <span class="text-sm text-slate-500">Total Tagihan</span>
+                <span class="font-bold text-slate-800">{{ formatCurrency(invoice.invoice.total_amount) }}</span>
+              </div>
+              <div class="mt-2 flex justify-between">
+                <span class="text-sm text-slate-500">Sudah Dibayar</span>
+                <span class="text-slate-700">{{ formatCurrency(invoice.invoice.paid_amount) }}</span>
+              </div>
+              <div class="mt-2 flex justify-between border-t border-dashed border-slate-200 pt-2">
+                <span class="text-sm font-semibold text-slate-900">Sisa Pembayaran</span>
+                <span class="text-lg font-bold text-danger-600">
+                  {{ formatCurrency(invoice.invoice.outstanding_balance) }}
+                </span>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Nomor Referensi</label>
-              <input v-model="paymentForm.payment_reference" placeholder="Nomor referensi" class="w-full" />
-            </div>
-          </template>
 
-          <div class="form-group">
-            <label>Catatan (Opsional)</label>
-            <textarea v-model="paymentForm.notes" rows="2" class="w-full"></textarea>
+            <div class="form-group">
+              <label>Jumlah Pembayaran</label>
+              <input
+                v-model.number="paymentForm.amount"
+                type="number"
+                :max="invoice?.invoice.outstanding_balance"
+                min="1"
+                required
+                class="w-full"
+              />
+              <p class="form-hint">
+                Maksimum: {{ formatCurrency(invoice?.invoice.outstanding_balance || 0) }}
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label>Metode Pembayaran</label>
+              <select v-model="paymentForm.payment_method" class="w-full" required>
+                <option value="cash">Tunai</option>
+                <option value="qris">QRIS</option>
+                <option value="transfer">Transfer</option>
+                <option value="ewallet">E-Wallet</option>
+              </select>
+            </div>
+
+            <template v-if="paymentForm.payment_method !== 'cash'">
+              <div class="form-group">
+                <label>Provider</label>
+                <input v-model="paymentForm.provider" placeholder="GoPay, BCA, dll" class="w-full" />
+              </div>
+              <div class="form-group">
+                <label>Nomor Referensi</label>
+                <input v-model="paymentForm.payment_reference" placeholder="Nomor referensi" class="w-full" />
+              </div>
+            </template>
+
+            <div class="form-group">
+              <label>Catatan (Opsional)</label>
+              <textarea v-model="paymentForm.notes" rows="2" class="w-full"></textarea>
+            </div>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="modal-footer">
             <button
               type="button"
               @click="showPaymentModal = false"
@@ -298,7 +320,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
-import { DollarSign, CheckCircle, Receipt, X } from 'lucide-vue-next'
+import { toast } from '@/composables/feedback'
+import { ArrowLeft, DollarSign, CheckCircle, Receipt, X, Printer, Download } from 'lucide-vue-next'
 
 const route = useRoute()
 const invoice = ref(null)
@@ -331,7 +354,7 @@ async function downloadPdf() {
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Failed to download PDF:', error)
-    alert('Gagal mendownload PDF. Silakan coba lagi.')
+    toast.error('Gagal mendownload PDF. Silakan coba lagi.')
   }
 }
 
@@ -376,20 +399,20 @@ function isOverdue(dueDate) {
 
 function getStatusClass(status) {
   const classes = {
-    unpaid: 'bg-slate-100 text-slate-600',
-    partial: 'bg-blue-100 text-blue-800',
-    paid: 'bg-green-100 text-green-800',
-    overdue: 'bg-red-100 text-red-800'
+    unpaid: 'badge-slate',
+    partial: 'badge-primary',
+    paid: 'badge-success',
+    overdue: 'badge-danger'
   }
   return classes[status] || classes.unpaid
 }
 
 function getStatusLabel(status) {
   const labels = {
-    unpaid: 'Unpaid',
-    partial: 'Partially Paid',
-    paid: 'Paid',
-    overdue: 'Overdue'
+    unpaid: 'Belum Dibayar',
+    partial: 'Dibayar Sebagian',
+    paid: 'Lunas',
+    overdue: 'Jatuh Tempo'
   }
   return labels[status] || status
 }
@@ -426,9 +449,9 @@ async function submitPayment() {
     showPaymentModal.value = false
     await Promise.all([loadInvoice(), loadPaymentHistory()])
     
-    alert('Pembayaran berhasil ditambahkan!')
+    toast.success('Pembayaran berhasil ditambahkan!')
   } catch (error) {
-    alert(error.response?.data?.message || 'Gagal menambah pembayaran')
+    toast.error(error.response?.data?.message || 'Gagal menambah pembayaran')
   } finally {
     processing.value = false
   }

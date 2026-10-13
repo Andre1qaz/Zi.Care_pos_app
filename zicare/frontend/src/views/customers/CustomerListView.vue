@@ -1,61 +1,94 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
-      <h1>Manajemen Pelanggan</h1>
-      <button class="btn btn-primary" @click="openForm()">+ Tambah Pelanggan</button>
+      <div>
+        <h1 class="page-title">Manajemen Pelanggan</h1>
+        <p class="page-subtitle">Kelola data pelanggan dan lihat riwayat transaksi mereka</p>
+      </div>
+      <button class="btn btn-primary" @click="openForm()">
+        <Plus class="h-4 w-4" />
+        Tambah Pelanggan
+      </button>
     </div>
 
-    <div class="filters card">
-      <div class="filter-group">
-        <label>Cari</label>
-        <input v-model="search" placeholder="Nama pelanggan..." @input="onFilterChange" />
+    <div class="card mb-6">
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="form-group mb-0 md:col-span-2">
+          <label>Cari Pelanggan</label>
+          <input v-model="search" placeholder="Nama pelanggan..." @input="onFilterChange" />
+        </div>
       </div>
     </div>
-    <div class="card table-container" style="margin-top: 1rem">
-      <table class="custom-table">
-        <thead>
-          <tr>
-            <th>Nama</th>
-            <th>Telepon</th>
-            <th>Email</th>
-            <th>Alamat</th>
-            <th style="text-align: center;">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in customers" :key="c.id">
-            <td>{{ c.customer_name }}</td>
-            <td>{{ c.phone || '-' }}</td>
-            <td>{{ c.email || '-' }}</td>
-            <td>{{ c.address || '-' }}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn btn-primary btn-sm" @click="openForm(c)">Edit</button>
-                <button class="btn btn-success btn-sm" @click="viewHistory(c)">History</button>
-                <button class="btn btn-danger btn-sm" @click="remove(c.id)">Hapus</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
 
-    <div class="pagination" v-if="pagination.pages > 1">
-      <button class="btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
-      <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
-      <button class="btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+    <div class="table-card">
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Telepon</th>
+              <th>Email</th>
+              <th>Alamat</th>
+              <th class="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="c in customers" :key="c.id">
+              <td class="font-medium text-slate-900">{{ c.customer_name }}</td>
+              <td>{{ c.phone || '-' }}</td>
+              <td>{{ c.email || '-' }}</td>
+              <td>{{ c.address || '-' }}</td>
+              <td>
+                <div class="flex justify-center gap-2">
+                  <button class="btn btn-icon-sm btn-secondary" title="Edit" @click="openForm(c)">
+                    <Pencil class="h-4 w-4" />
+                  </button>
+                  <button class="btn btn-icon-sm btn-primary" title="Riwayat" @click="viewHistory(c)">
+                    <History class="h-4 w-4" />
+                  </button>
+                  <button class="btn btn-icon-sm btn-danger" title="Hapus" @click="remove(c.id)">
+                    <Trash2 class="h-4 w-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="customers.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <Users class="h-7 w-7" />
+        </div>
+        <p class="text-sm font-medium text-slate-500">Tidak ada pelanggan ditemukan</p>
+      </div>
+
+      <div class="pagination" v-if="pagination.pages > 1">
+        <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+        <div class="flex gap-2">
+          <button class="page-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+          <button class="page-btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+        </div>
+      </div>
     </div>
 
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
-      <div class="modal card">
-        <h3>{{ form.id ? 'Edit' : 'Tambah' }} Pelanggan</h3>
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">{{ form.id ? 'Edit' : 'Tambah' }} Pelanggan</h3>
+          <button class="btn btn-ghost btn-icon-sm" title="Tutup" @click="showForm = false">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
         <form @submit.prevent="save">
-          <div class="form-group"><label>Nama</label><input v-model="form.customer_name" required /></div>
-          <div class="form-group"><label>Telepon</label><input v-model="form.phone" /></div>
-          <div class="form-group"><label>Email</label><input v-model="form.email" type="email" /></div>
-          <div class="form-group"><label>Alamat</label><textarea v-model="form.address" rows="2"></textarea></div>
-          <div class="form-actions">
-            <button type="button" class="btn" @click="showForm = false">Batal</button>
+          <div class="modal-body">
+            <div class="form-group"><label>Nama</label><input v-model="form.customer_name" required /></div>
+            <div class="form-group"><label>Telepon</label><input v-model="form.phone" /></div>
+            <div class="form-group"><label>Email</label><input v-model="form.email" type="email" /></div>
+            <div class="form-group"><label>Alamat</label><textarea v-model="form.address" rows="2"></textarea></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showForm = false">Batal</button>
             <button type="submit" class="btn btn-primary">Simpan</button>
           </div>
         </form>
@@ -68,6 +101,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { toast, confirmDialog } from '@/composables/feedback'
+import { Plus, Pencil, Trash2, History, Users, X } from 'lucide-vue-next'
 
 const router = useRouter()
 const customers = ref([])
@@ -117,65 +152,21 @@ async function save() {
   }
   showForm.value = false
   await load()
+  toast.success('Pelanggan berhasil disimpan')
 }
 
 async function remove(id) {
-  if (confirm('Hapus pelanggan?')) {
+  const ok = await confirmDialog('Hapus pelanggan?', {
+    title: 'Hapus Pelanggan',
+    confirmText: 'Hapus',
+    variant: 'danger'
+  })
+  if (ok) {
     await api.delete(`/customers/${id}`)
     await load()
+    toast.success('Pelanggan berhasil dihapus')
   }
 }
 
 onMounted(load)
 </script>
-
-<style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.page-header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.filters { display: flex; gap: 1rem; margin-bottom: 1rem; }
-.filter-group { flex: 1; }
-.filter-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.25rem; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { width: 100%; max-width: 450px; }
-.form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
-
-.table-container {
-  overflow-x: auto;
-}
-
-.custom-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.custom-table th, 
-.custom-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.custom-table th {
-  font-weight: 600;
-  color: #374151;
-  background-color: #f9fafb; 
-}
-
-.custom-table tbody tr:hover {
-  background-color: #f9fafb; 
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem; 
-  justify-content: center;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-</style>

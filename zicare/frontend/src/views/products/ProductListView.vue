@@ -1,14 +1,11 @@
 <template>
-  <div>
-    <div class="mb-8 flex items-center justify-between">
+  <div class="page">
+    <div class="page-header">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">Manajemen Produk</h1>
-        <p class="mt-1 text-sm text-slate-500">Kelola barang dan jasa untuk penjualan</p>
+        <h1 class="page-title">Manajemen Produk</h1>
+        <p class="page-subtitle">Kelola barang dan jasa untuk penjualan</p>
       </div>
-      <button
-        @click="showForm = true"
-        class="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-primary-700 active:scale-95"
-      >
+      <button @click="showForm = true" class="btn btn-primary">
         <Plus class="h-4 w-4" />
         Tambah Produk
       </button>
@@ -16,18 +13,17 @@
 
     <div class="card mb-6">
       <div class="grid gap-4 md:grid-cols-2">
-        <div class="form-group">
+        <div class="form-group mb-0">
           <label>Cari Produk</label>
           <input
             v-model="search"
             placeholder="Nama atau kode produk..."
             @input="onFilterChange"
-            class="w-full"
           />
         </div>
-        <div class="form-group">
+        <div class="form-group mb-0">
           <label>Kategori</label>
-          <select v-model="categoryFilter" @change="onFilterChange" class="w-full">
+          <select v-model="categoryFilter" @change="onFilterChange">
             <option value="">Semua Kategori</option>
             <option v-for="c in store.categories" :key="c.id" :value="c.id">
               {{ c.category_name }}
@@ -37,7 +33,7 @@
       </div>
     </div>
 
-    <div class="card overflow-hidden">
+    <div class="table-card">
       <div class="overflow-x-auto">
         <table class="table">
           <thead>
@@ -58,10 +54,8 @@
               <td>
                 <span
                   :class="[
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                    p.product_type === 'barang'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-amber-100 text-amber-800'
+                    'badge',
+                    p.product_type === 'barang' ? 'badge-primary' : 'badge-warning'
                   ]"
                 >
                   {{ p.product_type === 'barang' ? 'Barang' : 'Jasa' }}
@@ -79,10 +73,8 @@
                 <span
                   v-else
                   :class="[
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                    p.service_status === 'tersedia'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-slate-100 text-slate-600'
+                    'badge',
+                    p.service_status === 'tersedia' ? 'badge-success' : 'badge-slate'
                   ]"
                 >
                   {{ p.service_status === 'tersedia' ? 'Tersedia' : 'Tidak Tersedia' }}
@@ -92,14 +84,14 @@
                 <div class="flex justify-end gap-2">
                   <button
                     @click="editProduct(p)"
-                    class="rounded-lg bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200 hover:text-slate-900"
+                    class="btn btn-secondary btn-icon-sm"
                     title="Edit"
                   >
                     <Pencil class="h-4 w-4" />
                   </button>
                   <button
                     @click="removeProduct(p.id)"
-                    class="rounded-lg bg-red-50 p-2 text-danger-600 transition-all hover:bg-red-100 hover:text-danger-700"
+                    class="btn btn-danger btn-icon-sm"
                     title="Hapus"
                   >
                     <Trash2 class="h-4 w-4" />
@@ -110,89 +102,93 @@
           </tbody>
         </table>
       </div>
-      <div
-        v-if="store.products.length === 0"
-        class="flex flex-col items-center justify-center py-12 text-slate-500"
-      >
-        <Package class="h-12 w-12 mb-3 opacity-50" />
+      <div v-if="store.products.length === 0" class="empty-state">
+        <div class="empty-icon">
+          <Package class="h-7 w-7" />
+        </div>
         <p>Tidak ada produk ditemukan</p>
       </div>
     </div>
 
-    <div class="pagination" v-if="pagination.pages > 1">
-      <button class="btn btn-secondary" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+    <div
+      v-if="pagination.pages > 1"
+      class="pagination mt-5 justify-center rounded-3xl border border-slate-200/80 bg-white shadow-soft"
+    >
+      <button class="page-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
       <span>Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
-      <button class="btn btn-secondary" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
+      <button class="page-btn" :disabled="pagination.page === pagination.pages" @click="changePage(pagination.page + 1)">Next</button>
     </div>
 
     <div v-if="showForm" class="modal-overlay" @click.self="showForm = false">
       <div class="modal">
-        <div class="mb-6 flex items-center justify-between">
-          <h3 class="text-lg font-semibold">{{ form.id ? 'Edit' : 'Tambah' }} Produk</h3>
+        <div class="modal-header">
+          <h3 class="modal-title">{{ form.id ? 'Edit' : 'Tambah' }} Produk</h3>
           <button
             @click="showForm = false"
-            class="rounded-lg p-2 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600"
+            class="btn btn-ghost btn-icon-sm"
+            title="Tutup"
           >
             <X class="h-5 w-5" />
           </button>
         </div>
-        
+
         <form @submit.prevent="saveProduct">
-          <div class="form-group">
-            <label>Kode Produk</label>
-            <input v-model="form.product_code" required class="w-full" />
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Kode Produk</label>
+              <input v-model="form.product_code" required />
+            </div>
+
+            <div class="form-group">
+              <label>Nama Produk</label>
+              <input v-model="form.product_name" required />
+            </div>
+
+            <div class="form-group">
+              <label>Tipe Produk</label>
+              <select v-model="form.product_type" @change="onTypeChange">
+                <option value="barang">Barang (Fisik)</option>
+                <option value="jasa">Jasa (Layanan)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Harga</label>
+              <input v-model.number="form.price" type="number" required min="0" />
+            </div>
+
+            <div v-if="form.product_type === 'barang'" class="form-group">
+              <label>Stok</label>
+              <input
+                v-model.number="form.stock"
+                type="number"
+                required
+                min="0"
+              />
+              <p class="form-hint">Jumlah barang fisik yang tersedia</p>
+            </div>
+
+            <div v-else class="form-group">
+              <label>Status Ketersediaan</label>
+              <select v-model="form.service_status">
+                <option value="tersedia">Tersedia</option>
+                <option value="tidak_tersedia">Tidak Tersedia</option>
+              </select>
+              <p class="form-hint">Jasa tidak menggunakan manajemen stok</p>
+            </div>
+
+            <div class="form-group mb-0">
+              <label>Kategori</label>
+              <select v-model="form.category_id">
+                <option :value="null">Tanpa Kategori</option>
+                <option v-for="c in store.categories" :key="c.id" :value="c.id">
+                  {{ c.category_name }}
+                </option>
+              </select>
+            </div>
           </div>
-          
-          <div class="form-group">
-            <label>Nama Produk</label>
-            <input v-model="form.product_name" required class="w-full" />
-          </div>
-          
-          <div class="form-group">
-            <label>Tipe Produk</label>
-            <select v-model="form.product_type" @change="onTypeChange" class="w-full">
-              <option value="barang">Barang (Fisik)</option>
-              <option value="jasa">Jasa (Layanan)</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Harga</label>
-            <input v-model.number="form.price" type="number" required min="0" class="w-full" />
-          </div>
-          
-          <div v-if="form.product_type === 'barang'" class="form-group">
-            <label>Stok</label>
-            <input
-              v-model.number="form.stock"
-              type="number"
-              required
-              min="0"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-slate-500">Jumlah barang fisik yang tersedia</p>
-          </div>
-          
-          <div v-else class="form-group">
-            <label>Status Ketersediaan</label>
-            <select v-model="form.service_status" class="w-full">
-              <option value="tersedia">Tersedia</option>
-              <option value="tidak_tersedia">Tidak Tersedia</option>
-            </select>
-            <p class="mt-1 text-xs text-slate-500">Jasa tidak menggunakan manajemen stok</p>
-          </div>
-          
-          <div class="form-group">
-            <label>Kategori</label>
-            <select v-model="form.category_id" class="w-full">
-              <option :value="null">Tanpa Kategori</option>
-              <option v-for="c in store.categories" :key="c.id" :value="c.id">
-                {{ c.category_name }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="flex justify-end gap-3 pt-4">
+
+          <div class="modal-footer">
             <button
               type="button"
               @click="showForm = false"
@@ -214,6 +210,7 @@
 import { ref, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
 import { Plus, Pencil, Trash2, Package, X } from 'lucide-vue-next'
+import { toast, confirmDialog } from '@/composables/feedback'
 
 const store = useProductStore()
 const search = ref('')
@@ -294,8 +291,14 @@ async function saveProduct() {
 }
 
 async function removeProduct(id) {
-  if (confirm('Hapus produk ini?')) {
+  const confirmed = await confirmDialog('Hapus produk ini?', {
+    title: 'Hapus Produk',
+    confirmText: 'Ya, Hapus',
+    variant: 'danger'
+  })
+  if (confirmed) {
     await store.deleteProduct(id)
+    toast.success('Produk berhasil dihapus')
     await load()
   }
 }
@@ -305,7 +308,3 @@ onMounted(async () => {
   await load()
 })
 </script>
-
-<style scoped>
-.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; }
-</style>

@@ -1,69 +1,100 @@
 <template>
-  <div>
+  <div class="page">
     <div class="page-header">
       <div>
-        <button class="btn" @click="router.back()">← Kembali</button>
-        <h1>Riwayat Transaksi Pelanggan</h1>
-        <p class="customer-name">{{ customer?.customer_name }}</p>
+        <button class="btn btn-secondary btn-sm" @click="router.back()">
+          <ArrowLeft class="h-4 w-4" />
+          Kembali
+        </button>
+        <h1 class="page-title mt-4">Riwayat Transaksi Pelanggan</h1>
+        <p class="page-subtitle">{{ customer?.customer_name }}</p>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">Memuat data...</div>
+    <div v-if="loading" class="flex flex-col items-center justify-center gap-3 py-20 text-slate-500">
+      <span class="spinner"></span>
+      <span class="text-sm">Memuat data...</span>
+    </div>
 
     <template v-else-if="customer">
-      <div class="stats-grid">
-        <div class="stat-card card">
-          <span class="stat-icon">🧾</span>
-          <div>
-            <span class="stat-label">Total Transaksi</span>
-            <span class="stat-value">{{ stats.total_transactions }}</span>
+      <div class="mb-6 grid gap-4 sm:grid-cols-3">
+        <div class="stat-card">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-primary-600">
+              <Receipt class="h-6 w-6" />
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-500">Total Transaksi</p>
+              <p class="text-2xl font-bold text-slate-900">{{ stats.total_transactions }}</p>
+            </div>
           </div>
         </div>
-        <div class="stat-card card">
-          <span class="stat-icon">💰</span>
-          <div>
-            <span class="stat-label">Total Belanja</span>
-            <span class="stat-value">{{ formatCurrency(stats.total_spent) }}</span>
+        <div class="stat-card">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-success-50 text-success-600">
+              <Wallet class="h-6 w-6" />
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-500">Total Belanja</p>
+              <p class="text-2xl font-bold text-slate-900">{{ formatCurrency(stats.total_spent) }}</p>
+            </div>
           </div>
         </div>
-        <div class="stat-card card">
-          <span class="stat-icon">📅</span>
-          <div>
-            <span class="stat-label">Transaksi Terakhir</span>
-            <span class="stat-value">{{ formatDate(stats.last_transaction) }}</span>
+        <div class="stat-card">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-warning-50 text-warning-600">
+              <Calendar class="h-6 w-6" />
+            </div>
+            <div>
+              <p class="text-sm font-medium text-slate-500">Transaksi Terakhir</p>
+              <p class="text-2xl font-bold text-slate-900">{{ formatDate(stats.last_transaction) }}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <h3>Daftar Transaksi</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>No. Invoice</th>
-              <th>Tanggal</th>
-              <th>Kasir</th>
-              <th>Metode</th>
-              <th>Status</th>
-              <th>Total</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="invoice in invoices" :key="invoice.id">
-              <td>{{ invoice.invoice_number }}</td>
-              <td>{{ formatDate(invoice.created_at) }}</td>
-              <td>{{ invoice.cashier_name || '-' }}</td>
-              <td><span :class="['payment-badge', invoice.payment_method]">{{ invoice.payment_method }}</span></td>
-              <td><span :class="['status-badge', invoice.payment_status]">{{ invoice.payment_status }}</span></td>
-              <td>{{ formatCurrency(invoice.total_amount) }}</td>
-              <td>
-                <router-link :to="`/invoices/${invoice.id}`" class="btn btn-primary btn-sm">Detail</router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-if="invoices.length === 0" class="empty">Belum ada transaksi</p>
+      <div class="table-card">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h3 class="section-title">Daftar Transaksi</h3>
+          <span class="chip">{{ invoices.length }} transaksi</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>No. Invoice</th>
+                <th>Tanggal</th>
+                <th>Kasir</th>
+                <th>Metode</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th class="text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="invoice in invoices" :key="invoice.id">
+                <td class="font-mono text-sm">{{ invoice.invoice_number }}</td>
+                <td>{{ formatDate(invoice.created_at) }}</td>
+                <td>{{ invoice.cashier_name || '-' }}</td>
+                <td><span class="badge" :class="invoice.payment_method">{{ invoice.payment_method }}</span></td>
+                <td><span class="badge" :class="invoice.payment_status">{{ invoice.payment_status }}</span></td>
+                <td class="font-medium">{{ formatCurrency(invoice.total_amount) }}</td>
+                <td class="text-right">
+                  <router-link :to="`/invoices/${invoice.id}`" class="btn btn-primary btn-sm">
+                    <Eye class="h-3.5 w-3.5" />
+                    Detail
+                  </router-link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="invoices.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <Receipt class="h-7 w-7" />
+          </div>
+          <p class="text-sm font-medium text-slate-500">Belum ada transaksi</p>
+        </div>
       </div>
     </template>
   </div>
@@ -73,6 +104,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
+import { Receipt, Wallet, Calendar, ArrowLeft, Eye } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -126,26 +158,30 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
-.page-header h1 { margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 700; }
-.customer-name { color: var(--secondary); margin: 0; font-size: 0.875rem; }
-.loading { text-align: center; padding: 3rem; color: var(--secondary); }
-.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-.stat-card { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; }
-.stat-icon { font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--primary-light); border-radius: var(--radius-md); }
-.stat-label { display: block; font-size: 0.875rem; color: var(--secondary); font-weight: 500; }
-.stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: #1f2937; }
-h3 { margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600; }
-.payment-badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-.payment-badge.cash { background: #d1fae5; color: #065f46; }
-.payment-badge.qris { background: #dbeafe; color: #1e40af; }
-.payment-badge.transfer { background: #fef3c7; color: #92400e; }
-.payment-badge.ewallet { background: #fce7f3; color: #9d174d; }
-.status-badge { padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-.status-badge.paid { background: #d1fae5; color: #065f46; }
-.status-badge.pending { background: #fef3c7; color: #92400e; }
-.empty { color: var(--secondary); text-align: center; padding: 3rem 1rem; }
-@media (max-width: 768px) {
-  .stats-grid { grid-template-columns: 1fr; }
+.badge {
+  text-transform: capitalize;
+}
+
+.badge.cash,
+.badge.paid,
+.badge.synced {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge.qris {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge.transfer,
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge.ewallet {
+  background: #fce7f3;
+  color: #9d174d;
 }
 </style>
