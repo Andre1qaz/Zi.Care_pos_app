@@ -100,6 +100,93 @@
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- Low stock notifications -->
+            <div class="relative">
+              <button
+                type="button"
+                class="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-soft transition-all hover:-translate-y-0.5 hover:text-primary-600"
+                title="Notifikasi stok menipis"
+                @click="toggleLowStock"
+              >
+                <Bell class="h-5 w-5" />
+                <span
+                  v-if="lowStock.length"
+                  class="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white shadow"
+                >
+                  {{ lowStock.length > 99 ? '99+' : lowStock.length }}
+                </span>
+              </button>
+
+              <div v-if="showLowStock" class="fixed inset-0 z-40" @click="showLowStock = false" />
+
+              <transition name="fade">
+                <div
+                  v-if="showLowStock"
+                  class="absolute right-0 top-12 z-50 w-[21rem] overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-bubble-lg"
+                >
+                  <div class="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
+                    <div>
+                      <p class="text-sm font-bold text-slate-900">Stok Menipis</p>
+                      <p class="text-xs text-slate-500">Barang dengan stok ≤ {{ lowStockThreshold }}</p>
+                    </div>
+                    <button
+                      type="button"
+                      class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                      title="Segarkan"
+                      @click="fetchLowStock"
+                    >
+                      <RefreshCw :class="['h-4 w-4', loadingLowStock && 'animate-spin']" />
+                    </button>
+                  </div>
+
+                  <div class="max-h-80 overflow-y-auto">
+                    <div v-if="loadingLowStock" class="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                      <span class="spinner"></span> Memuat...
+                    </div>
+                    <div v-else-if="!lowStock.length" class="empty-state py-10">
+                      <div class="empty-icon">
+                        <CheckCircle2 class="h-7 w-7" />
+                      </div>
+                      <p class="text-sm text-slate-500">Semua stok aman 👍</p>
+                    </div>
+                    <ul v-else class="divide-y divide-slate-100">
+                      <li
+                        v-for="p in lowStock"
+                        :key="p.id"
+                        class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
+                      >
+                        <span
+                          :class="[
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                            p.stock <= 0 ? 'bg-danger-100 text-danger-600' : 'bg-warning-100 text-warning-600'
+                          ]"
+                        >
+                          <AlertTriangle class="h-4 w-4" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                          <p class="truncate text-sm font-semibold text-slate-800">{{ p.product_name }}</p>
+                          <p class="font-mono text-xs text-slate-400">{{ p.product_code }}</p>
+                        </div>
+                        <span :class="['badge', p.stock <= 0 ? 'badge-danger' : 'badge-warning']">
+                          {{ p.stock <= 0 ? 'Habis' : 'Sisa ' + p.stock }}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <button
+                    v-if="canAccess(['administrator'])"
+                    type="button"
+                    class="flex w-full items-center justify-center gap-1.5 border-t border-slate-100 px-5 py-3 text-sm font-semibold text-primary-600 transition-colors hover:bg-primary-50"
+                    @click="goToProducts"
+                  >
+                    <Package class="h-4 w-4" />
+                    Kelola Produk
+                  </button>
+                </div>
+              </transition>
+            </div>
+
             <span class="chip hidden shadow-soft sm:inline-flex">
               <CalendarDays class="h-3.5 w-3.5 text-primary-500" />
               {{ today }}
@@ -127,9 +214,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/services/api'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -146,6 +234,10 @@ import {
   X,
   CalendarDays,
   Plus,
+  Bell,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -213,6 +305,39 @@ function logout() {
   auth.logout()
   router.push('/login')
 }
+
+// ---- Low stock notifications ----
+const lowStockThreshold = 10
+const lowStock = ref([])
+const showLowStock = ref(false)
+const loadingLowStock = ref(false)
+
+async function fetchLowStock() {
+  loadingLowStock.value = true
+  try {
+    const { data } = await api.get('/products', {
+      params: { low_stock: lowStockThreshold, limit: 100 }
+    })
+    lowStock.value = Array.isArray(data.data) ? data.data : []
+  } catch {
+    // Keep the bell quiet if the request fails (e.g. offline).
+    lowStock.value = []
+  } finally {
+    loadingLowStock.value = false
+  }
+}
+
+function toggleLowStock() {
+  showLowStock.value = !showLowStock.value
+  if (showLowStock.value) fetchLowStock()
+}
+
+function goToProducts() {
+  showLowStock.value = false
+  router.push('/products')
+}
+
+onMounted(fetchLowStock)
 </script>
 
 <style scoped>

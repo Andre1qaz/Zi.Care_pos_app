@@ -13,6 +13,11 @@
         <span v-if="cart.items.length" class="badge badge-slate">
           {{ formatCurrency(cart.total) }}
         </span>
+        <button class="btn btn-secondary btn-sm" @click="showHeld = true">
+          <History class="h-4 w-4" />
+          Tersimpan
+          <span v-if="heldOrders.length" class="badge badge-primary">{{ heldOrders.length }}</span>
+        </button>
       </div>
     </div>
 
@@ -108,7 +113,17 @@
               <span v-if="cart.items.length" class="badge badge-primary">{{ cart.totalItems }} item</span>
             </div>
             <div class="space-y-1.5">
-              <label class="text-sm font-semibold text-slate-700">Pilih Pelanggan:</label>
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-semibold text-slate-700">Pilih Pelanggan:</label>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm text-primary-600 hover:bg-primary-50 hover:text-primary-700"
+                  @click="openCustomerForm"
+                >
+                  <UserPlus class="h-4 w-4" />
+                  Pelanggan Baru
+                </button>
+              </div>
               <select
                 v-model="selectedCustomerId"
                 class="input"
@@ -323,6 +338,15 @@
               </button>
 
               <button
+                @click="holdOrder"
+                :disabled="!cart.items.length"
+                class="btn btn-warning w-full"
+              >
+                <Archive class="h-4 w-4" />
+                Tahan Transaksi
+              </button>
+
+              <button
                 @click="cart.clear()"
                 class="btn btn-secondary w-full"
               >
@@ -338,6 +362,104 @@
         </div>
       </div>
     </div>
+
+    <!-- Transaksi Tersimpan (Hold/Resume) -->
+    <div v-if="showHeld" class="modal-overlay" @click.self="showHeld = false">
+      <div class="modal max-w-xl">
+        <div class="modal-header">
+          <h3 class="modal-title flex items-center gap-2">
+            <History class="h-5 w-5 text-primary-500" />
+            Transaksi Tersimpan
+          </h3>
+          <button class="btn btn-ghost btn-icon-sm" title="Tutup" @click="showHeld = false">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <div v-if="!heldOrders.length" class="empty-state">
+            <div class="empty-icon">
+              <Archive class="h-7 w-7" />
+            </div>
+            <div>
+              <p class="font-semibold text-slate-700">Belum ada transaksi tersimpan</p>
+              <p class="text-sm text-slate-500">Gunakan tombol "Tahan Transaksi" untuk menyimpan keranjang.</p>
+            </div>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="order in heldOrders"
+              :key="order.id"
+              class="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+            >
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-primary-600">
+                <Archive class="h-5 w-5" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-semibold text-slate-900">{{ order.customerName }}</p>
+                <p class="text-xs text-slate-500">
+                  {{ order.items.length }} item · {{ formatCurrency(order.total) }} · {{ formatDateTime(order.createdAt) }}
+                </p>
+              </div>
+              <button class="btn btn-primary btn-sm" @click="resumeOrder(order)">
+                <PlayCircle class="h-4 w-4" />
+                Lanjutkan
+              </button>
+              <button class="btn btn-danger btn-icon-sm" title="Hapus" @click="deleteHeld(order.id)">
+                <Trash2 class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-if="heldOrders.length" class="modal-footer">
+          <button class="btn btn-ghost text-danger-600 hover:bg-danger-50" @click="clearHeld">
+            Hapus Semua
+          </button>
+          <button class="btn btn-secondary" @click="showHeld = false">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tambah Pelanggan Cepat -->
+    <div v-if="showCustomerForm" class="modal-overlay" @click.self="showCustomerForm = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title flex items-center gap-2">
+            <UserPlus class="h-5 w-5 text-primary-500" />
+            Tambah Pelanggan Baru
+          </h3>
+          <button class="btn btn-ghost btn-icon-sm" title="Tutup" @click="showCustomerForm = false">
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+        <form @submit.prevent="saveCustomer">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Nama</label>
+              <input v-model="customerForm.customer_name" required placeholder="Nama pelanggan" />
+            </div>
+            <div class="form-group">
+              <label>Telepon</label>
+              <input v-model="customerForm.phone" placeholder="08xxxxxxxxxx" />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input v-model="customerForm.email" type="email" placeholder="email@contoh.com" />
+            </div>
+            <div class="form-group mb-0">
+              <label>Alamat</label>
+              <textarea v-model="customerForm.address" rows="2" placeholder="Alamat (opsional)"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showCustomerForm = false">Batal</button>
+            <button type="submit" class="btn btn-primary" :disabled="savingCustomer">
+              <span v-if="savingCustomer" class="spinner h-4 w-4 border-white/40 border-t-white"></span>
+              {{ savingCustomer ? 'Menyimpan...' : 'Simpan' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -346,8 +468,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useProductStore } from '@/stores/products'
-import { Plus, Minus, Trash2, ShoppingCart, DollarSign, Smartphone, Building2, Wallet, Search } from 'lucide-vue-next'
-import { toast } from '@/composables/feedback'
+import { Plus, Minus, Trash2, ShoppingCart, DollarSign, Smartphone, Building2, Wallet, Search, UserPlus, History, Archive, PlayCircle, X } from 'lucide-vue-next'
+import { toast, confirmDialog } from '@/composables/feedback'
 import api from '@/services/api'
 
 const cart = useCartStore()
@@ -358,6 +480,16 @@ const search = ref('')
 const categoryFilter = ref('')
 const processing = ref(false)
 const allowPartialPayment = ref(false)
+
+// Transaksi tersimpan (hold/park)
+const HELD_KEY = 'zicare_held_orders'
+const heldOrders = ref([])
+const showHeld = ref(false)
+
+// Tambah pelanggan cepat
+const showCustomerForm = ref(false)
+const savingCustomer = ref(false)
+const customerForm = ref({ customer_name: '', phone: '', email: '', address: '' })
 
 const customers = ref([])
 const selectedCustomerId = ref(null)
@@ -483,7 +615,146 @@ async function checkout() {
   }
 }
 
+// ---------- Transaksi tersimpan (hold / resume) ----------
+function loadHeld() {
+  try {
+    const raw = localStorage.getItem(HELD_KEY)
+    heldOrders.value = raw ? JSON.parse(raw) : []
+  } catch {
+    heldOrders.value = []
+  }
+}
+
+function persistHeld() {
+  try {
+    localStorage.setItem(HELD_KEY, JSON.stringify(heldOrders.value))
+  } catch (e) {
+    console.error('Gagal menyimpan transaksi tersimpan', e)
+  }
+}
+
+function formatDateTime(iso) {
+  try {
+    return new Date(iso).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return ''
+  }
+}
+
+function customerLabel(customer) {
+  if (!customer) return 'Walk-in Customer'
+  return customer.nama || customer.customer_name || customer.name || 'Walk-in Customer'
+}
+
+function holdOrder() {
+  if (!cart.items.length) {
+    toast.warning('Keranjang masih kosong')
+    return
+  }
+
+  const selected = customers.value.find(c => (c.id || c.customer_id) === selectedCustomerId.value)
+
+  heldOrders.value.unshift({
+    id: Date.now(),
+    createdAt: new Date().toISOString(),
+    customerId: selectedCustomerId.value,
+    customerName: customerLabel(selected),
+    items: JSON.parse(JSON.stringify(cart.items)),
+    total: cart.total
+  })
+  persistHeld()
+
+  cart.clear()
+  selectedCustomerId.value = null
+  paymentEntries.value = [{ method: 'cash', amount: 0, paidAmount: 0, provider: '', paymentReference: '' }]
+  allowPartialPayment.value = false
+  toast.success('Transaksi ditahan. Buka "Tersimpan" untuk melanjutkan.')
+}
+
+async function resumeOrder(order) {
+  if (cart.items.length) {
+    const ok = await confirmDialog(
+      'Keranjang saat ini akan diganti dengan transaksi tersimpan ini.',
+      { title: 'Lanjutkan Transaksi', confirmText: 'Lanjutkan', variant: 'primary' }
+    )
+    if (!ok) return
+  }
+
+  cart.loadState({
+    items: order.items,
+    customerId: order.customerId,
+    customerName: order.customerName
+  })
+  selectedCustomerId.value = order.customerId ?? null
+  heldOrders.value = heldOrders.value.filter(o => o.id !== order.id)
+  persistHeld()
+  showHeld.value = false
+  toast.success('Transaksi dilanjutkan')
+}
+
+async function deleteHeld(id) {
+  const ok = await confirmDialog('Hapus transaksi tersimpan ini?', {
+    title: 'Hapus Transaksi',
+    confirmText: 'Hapus',
+    variant: 'danger'
+  })
+  if (!ok) return
+  heldOrders.value = heldOrders.value.filter(o => o.id !== id)
+  persistHeld()
+}
+
+async function clearHeld() {
+  const ok = await confirmDialog('Hapus semua transaksi tersimpan?', {
+    title: 'Kosongkan Tersimpan',
+    confirmText: 'Hapus Semua',
+    variant: 'danger'
+  })
+  if (!ok) return
+  heldOrders.value = []
+  persistHeld()
+}
+
+// ---------- Tambah pelanggan cepat ----------
+function openCustomerForm() {
+  customerForm.value = { customer_name: '', phone: '', email: '', address: '' }
+  showCustomerForm.value = true
+}
+
+async function saveCustomer() {
+  if (!customerForm.value.customer_name) {
+    toast.warning('Nama pelanggan wajib diisi')
+    return
+  }
+
+  savingCustomer.value = true
+  try {
+    const { data } = await api.post('/customers', customerForm.value)
+    const created = data.data
+
+    if (created) {
+      const newId = created.id || created.customer_id
+      if (!customers.value.some(c => (c.id || c.customer_id) === newId)) {
+        customers.value = [created, ...customers.value]
+      }
+      selectedCustomerId.value = newId
+    }
+
+    showCustomerForm.value = false
+    toast.success('Pelanggan berhasil ditambahkan')
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Gagal menambah pelanggan')
+  } finally {
+    savingCustomer.value = false
+  }
+}
+
 onMounted(async () => {
+  loadHeld()
   await loadCustomers()
   await productStore.fetchCategories()
   await loadProducts()
