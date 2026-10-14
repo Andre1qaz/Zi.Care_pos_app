@@ -25,6 +25,14 @@ return [
         'journal_cash_code' => $_ENV['ODOO_JOURNAL_CASH_CODE'] ?? 'CSH1',
         'journal_bank_code' => $_ENV['ODOO_JOURNAL_BANK_CODE'] ?? 'BNK1',
         'enabled'           => filter_var($_ENV['ODOO_SYNC_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN),
+        // Bila true (default), sinkronisasi saat checkout dijalankan di proses
+        // worker terpisah supaya respons transaksi tetap cepat. Set false untuk
+        // sinkron langsung (memblokir) — berguna untuk pengujian.
+        'async'             => filter_var($_ENV['ODOO_SYNC_ASYNC'] ?? true, FILTER_VALIDATE_BOOLEAN),
+        // Bila true, service akan melengkapi akun "Outstanding Receipts" pada
+        // payment method line Odoo yang belum diisi (dibutuhkan agar pembayaran
+        // benar-benar terposting & invoice lunas di modul Accounting).
+        'auto_configure'    => filter_var($_ENV['ODOO_AUTO_CONFIGURE'] ?? true, FILTER_VALIDATE_BOOLEAN),
         'max_retry'         => (int) ($_ENV['ODOO_SYNC_MAX_RETRY'] ?? 3),
     ],
     'app' => [

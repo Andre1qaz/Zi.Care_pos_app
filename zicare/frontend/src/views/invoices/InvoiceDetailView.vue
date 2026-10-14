@@ -24,6 +24,16 @@
           Lanjut Pembayaran
         </button>
         <button
+          v-if="canSync"
+          @click="syncToOdoo"
+          :disabled="syncing"
+          class="btn btn-secondary"
+          :title="syncButtonTitle"
+        >
+          <RefreshCw :class="['h-4 w-4', syncing && 'animate-spin']" />
+          {{ syncing ? 'Menyinkron...' : syncButtonLabel }}
+        </button>
+        <button
           @click="printInvoice"
           class="btn btn-secondary"
         >
@@ -65,6 +75,10 @@
             </div>
             <span class="badge" :class="getStatusClass(invoice.invoice.payment_status)">
               {{ getStatusLabel(invoice.invoice.payment_status) }}
+            </span>
+            <span class="badge ml-2" :class="syncBadgeClass" :title="syncButtonTitle">
+              <Cloud v-if="invoice.invoice.sync_status === 'synced'" class="mr-1 h-3 w-3" />
+              {{ syncLabel }}
             </span>
           </div>
 
@@ -319,15 +333,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 import { toast } from '@/composables/feedback'
-import { ArrowLeft, DollarSign, CheckCircle, Receipt, X, Printer, Download } from 'lucide-vue-next'
+import { ArrowLeft, DollarSign, CheckCircle, Receipt, X, Printer, Download, RefreshCw, Cloud } from 'lucide-vue-next'
 
 const route = useRoute()
+const auth = useAuthStore()
 const invoice = ref(null)
 const paymentHistory = ref([])
 const showPaymentModal = ref(false)
 const processing = ref(false)
+const syncing = ref(false)
 const paymentForm = ref({
   amount: 0,
   payment_method: 'cash',
@@ -361,6 +378,52 @@ async function downloadPdf() {
 const canContinuePayment = computed(() => {
   return invoice.value && invoice.value.invoice.outstanding_balance > 0
 })
+
+// ---- Integrasi Odoo (modul Accounting) ----
+const canSync = computed(() => ['administrator', 'manager'].includes(auth.userRole))
+const isSynced = computed(() => invoice.value?.invoice?.sync_status === 'synced')
+
+const syncButtonLabel = computed(() => (isSynced.value ? 'Sync Ulang' : 'Sync ke Odoo'))
+const syncButtonTitle = computed(() =>
+  isSynced.value
+    ? 'Hapus & buat ulang invoice di Odoo (re-sync)'
+    : 'Kirim invoice ini ke modul Accounting Odoo'
+)
+
+const syncLabels = {
+  pending: 'Belum Sync',
+  syncing: 'Sinkron...',
+  synced: 'Odoo: Terkirim',
+  failed: 'Odoo: Gagal',
+  manual_review: 'Odoo: Perlu Review',
+}
+const syncLabel = computed(() => syncLabels[invoice.value?.invoice?.sync_status] || 'Belum Sync')
+
+const syncBadgeClass = computed(() => {
+  const s = invoice.value?.invoice?.sync_status
+  if (s === 'synced') return 'badge-success'
+  if (s === 'failed') return 'badge-danger'
+  if (s === 'syncing') return 'badge-primary'
+  return 'badge-warning'
+})
+
+async function syncToOdoo() {
+  if (!invoice.value) return
+  syncing.value = true
+  try {
+    // Bila sudah pernah tersinkron, lakukan re-sync (force) agar tidak dobel.
+    const { data } = await api.post(`/invoices/${route.params.id}/sync`, null, {
+      params: isSynced.value ? { force: 1 } : {}
+    })
+    await loadInvoice()
+    toast.success(data?.message || 'Invoice berhasil disinkronkan ke Odoo.')
+  } catch (error) {
+    await loadInvoice()
+    toast.error(error.response?.data?.message || 'Gagal menyinkronkan ke Odoo. Pastikan Odoo berjalan.')
+  } finally {
+    syncing.value = false
+  }
+}
 
 const paymentPercentage = computed(() => {
   if (!invoice.value) return 0

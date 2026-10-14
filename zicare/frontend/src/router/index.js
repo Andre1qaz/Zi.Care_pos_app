@@ -85,6 +85,12 @@ const routes = [
         name: 'audit-logs',
         component: () => import('@/views/audit/AuditLogView.vue'),
         meta: { roles: ['administrator', 'manager'] }
+      },
+      {
+        path: 'integration',
+        name: 'integration',
+        component: () => import('@/views/integration/IntegrationView.vue'),
+        meta: { roles: ['administrator', 'manager'] }
       }
     ]
   }

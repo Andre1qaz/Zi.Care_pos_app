@@ -19,31 +19,143 @@ class OdooSyncService
         $this->logger = Di::getDefault()->getShared('logger');
     }
 
+    /**
+     * Dipanggil saat transaksi selesai. Secara default TIDAK memblokir respons
+     * checkout: sinkronisasi dijalankan di proses worker terpisah (detached),
+     * karena proses sync bisa memakan beberapa detik. Invoice sudah tersimpan
+     * dengan sync_status='pending' sehingga worker/CLI/ tombol manual bisa
+     * mencoba ulang bila gagal.
+     */
     public function queueSync(int $invoiceId): void
     {
         if (!$this->config['enabled']) return;
-        try {
-            $this->syncInvoice($invoiceId);
-        } catch (\Throwable $e) {
-            $this->logger->error("Odoo sync error: " . $e->getMessage());
+
+        if (empty($this->config['async'])) {
+            // Mode sinkron (berguna untuk pengujian / server dengan worker).
+            try {
+                $this->syncInvoice($invoiceId);
+            } catch (\Throwable $e) {
+                $this->logger->error("Odoo sync error: " . $e->getMessage());
+            }
+            return;
+        }
+
+        if (!$this->spawnBackgroundSync($invoiceId)) {
+            $this->logger->warning("Odoo: gagal menjalankan worker latar untuk invoice #{$invoiceId}; akan dicoba oleh CLI/tombol manual.");
         }
     }
 
-    public function retrySync(int $invoiceId): bool
+    /**
+     * Jalankan `cli/sync_odoo.php --id=NN` sebagai proses terpisah tanpa
+     * menunggu selesai, agar checkout POS tetap cepat.
+     */
+    private function spawnBackgroundSync(int $invoiceId): bool
     {
-        if (!$this->config['enabled']) return false;
-        return $this->syncInvoice($invoiceId);
+        $cli = BASE_PATH . '/cli/sync_odoo.php';
+        if (!is_file($cli)) {
+            return false;
+        }
+
+        $php = $_ENV['PHP_CLI_BINARY'] ?? (PHP_BINARY ?: 'php');
+
+        try {
+            if (stripos(PHP_OS_FAMILY, 'Windows') !== false) {
+                $cmd = 'start /B "" "' . $php . '" "' . $cli . '" --id=' . $invoiceId . ' > NUL 2>&1';
+                $handle = @popen($cmd, 'r');
+                if ($handle === false) {
+                    return false;
+                }
+                @pclose($handle);
+                return true;
+            }
+
+            $cmd = escapeshellarg($php) . ' ' . escapeshellarg($cli) . ' --id=' . $invoiceId . ' > /dev/null 2>&1 &';
+            $handle = @popen($cmd, 'r');
+            if ($handle === false) {
+                return false;
+            }
+            @pclose($handle);
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->warning('Odoo: gagal spawn worker: ' . $e->getMessage());
+            return false;
+        }
     }
 
-    public function syncInvoice(int $invoiceId): bool
+    public function retrySync(int $invoiceId, bool $force = false): bool
+    {
+        if (!$this->config['enabled']) return false;
+        return $this->syncInvoice($invoiceId, $force);
+    }
+
+    /**
+     * Uji koneksi ke Odoo (modul Accounting). Dipakai oleh endpoint status
+     * integrasi dan CLI agar konektivitas bisa diverifikasi tanpa membuat
+     * invoice baru.
+     */
+    public function testConnection(): array
+    {
+        if (!$this->config['enabled']) {
+            return ['enabled' => false, 'connected' => false, 'message' => 'Sinkronisasi Odoo dimatikan (ODOO_SYNC_ENABLED=false).'];
+        }
+
+        try {
+            $uid = $this->authenticate();
+            $version = $this->jsonRpc('common', 'version', []);
+
+            $saleJournal = $this->jsonRpc('object', 'execute_kw', [
+                $this->config['db'], $uid, $this->authCredential(),
+                'account.journal', 'search_count', [[['type', '=', 'sale']]],
+            ]);
+
+            return [
+                'enabled'        => true,
+                'connected'      => true,
+                'url'            => $this->config['url'],
+                'database'       => $this->config['db'],
+                'username'       => $this->config['username'],
+                'uid'            => $uid,
+                'server_version' => $version['server_version'] ?? null,
+                'sale_journals'  => $saleJournal,
+                'message'        => 'Terhubung ke Odoo Accounting.',
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'enabled'   => true,
+                'connected' => false,
+                'url'       => $this->config['url'],
+                'database'  => $this->config['db'],
+                'username'  => $this->config['username'],
+                'message'   => $e->getMessage(),
+            ];
+        }
+    }
+
+    public function syncInvoice(int $invoiceId, bool $force = false): bool
     {
         $db = Di::getDefault()->getShared('db');
         $invoiceRepo = Di::getDefault()->getShared('invoiceRepository');
         $data = $invoiceRepo->findWithDetails($invoiceId);
         if (!$data) return false;
 
+        // Idempotent: jangan buat duplikat di Odoo kalau invoice ini sudah
+        // pernah tersinkron (kecuali diminta paksa / re-sync).
+        $existingMoveId = $data['invoice']['odoo_move_id'] ?? null;
+        if (!$force && !empty($existingMoveId) && ($data['invoice']['sync_status'] ?? '') === 'synced') {
+            return true;
+        }
+
         try {
             $uid = $this->authenticate();
+
+            // Re-sync paksa: hapus dulu move lama di Odoo agar tidak dobel.
+            if ($force && !empty($existingMoveId)) {
+                try {
+                    $this->deleteMove((int) $existingMoveId);
+                } catch (\Throwable $inner) {
+                    $this->logger->warning("Gagal menghapus move lama #{$existingMoveId}: " . $inner->getMessage());
+                }
+            }
 
             // Customer data lives on the related `customers` record; the invoices
             // table has no customer_name/email/phone columns.
@@ -72,9 +184,13 @@ class OdooSyncService
                 ]);
 
                 $lines[] = [0, 0, [
+                    'name' => $item['product_name'],
                     'product_id' => $productId,
                     'quantity' => (int) $item['quantity'],
-                    'price_unit' => (float) $item['price']
+                    'price_unit' => (float) $item['price'],
+                    // Harga POS sudah final (tanpa perhitungan pajak terpisah).
+                    // Bersihkan pajak bawaan Odoo agar total invoice sama persis.
+                    'tax_ids' => [[6, 0, []]],
                 ]];
             }
 
@@ -87,22 +203,23 @@ class OdooSyncService
             }
             $journalId = !empty($saleJournal) ? (int)$saleJournal[0] : 7; // Fallback ke journal default jika tidak ditemukan
             
-            $moveId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
+            $moveId = $this->toId($this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
                 'move_type' => 'out_invoice',
                 'partner_id' => $partnerId,
                 'invoice_date' => date('Y-m-d', strtotime($data['invoice']['created_at'])),
                 'ref' => 'POS: ' . $data['invoice']['invoice_number'],
                 'journal_id' => $journalId,
                 'invoice_line_ids' => $lines,
-            ]]]);
+            ]]]));
 
-            if ($moveId) {
-                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[(int) $moveId]]]);
+            if ($moveId > 0) {
+                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[$moveId]]]);
 
                 $db->execute("UPDATE invoices SET sync_status = 'synced', odoo_move_id = ? WHERE id = ?", [$moveId, $invoiceId]);
 
-                if ((float)$data['invoice']['paid_amount'] > 0) {
-                    $this->syncPayment((int)$moveId, (float)$data['invoice']['paid_amount'], $data['invoice']['payment_method'] ?? 'cash');
+                $appliedAmount = (float) $data['invoice']['total_amount'] - (float) $data['invoice']['outstanding_balance'];
+                if ($appliedAmount > 0) {
+                    $this->syncPayment($moveId, $appliedAmount, $data['invoice']['payment_method'] ?? 'cash');
                 }
             }
 
@@ -136,11 +253,11 @@ class OdooSyncService
 
         if (!empty($existing)) return (int) $existing[0];
 
-        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'res.partner', 'create', [[
+        return $this->toId($this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'res.partner', 'create', [[
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? '',
-        ]]]);
+        ]]]));
     }
 
     public function syncProduct(array $data): int
@@ -151,13 +268,17 @@ class OdooSyncService
 
         if (!empty($existing)) return (int) $existing[0];
 
-        return (int) $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'create', [[
+        return $this->toId($this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'create', [[
             'name' => $data['name'],
             'list_price' => $data['price'],
             'default_code' => $data['sku'],
             'type' => 'consu',
-            'sale_ok' => true
-        ]]]);
+            'sale_ok' => true,
+            // Produk POS tidak memakai pajak default Odoo; total invoice POS
+            // sudah final. Kosongkan pajak agar harga tidak bertambah.
+            'taxes_id' => [[6, 0, []]],
+            'supplier_taxes_id' => [[6, 0, []]],
+        ]]]));
     }
 
     public function syncPayment(int $moveId, float $amount, string $method): void
@@ -171,9 +292,22 @@ class OdooSyncService
         $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['code', '=', $journalCode]]], ['limit' => 1]]);
 
         if (empty($journal)) {
+            // Untuk pembayaran tunai, utamakan journal tipe "cash"; jika tidak
+            // ada, baru pakai bank.
+            $types = $isCash ? [['type', '=', 'cash']] : [['type', 'in', ['bank', 'cash']]];
+            $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [$types], ['limit' => 1]]);
+        }
+        if (empty($journal)) {
             $journal = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.journal', 'search', [[['type', 'in', ['cash', 'bank']]]], ['limit' => 1]]);
         }
         $journalId = !empty($journal) ? (int)$journal[0] : 1;
+
+        // Odoo 19 hanya membuat jurnal pembayaran bila payment method line punya
+        // akun outstanding. Tanpa ini, pembayaran "in_process" tanpa jurnal dan
+        // invoice tetap outstanding. Lengkapi otomatis bila diizinkan.
+        if (!empty($this->config['auto_configure'])) {
+            $this->ensureInboundOutstandingAccount($journalId);
+        }
 
         $wizardId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.register', 'create', [[
             'amount' => $amount,
@@ -185,10 +319,88 @@ class OdooSyncService
                 'active_ids' => [$moveId]
             ]
         ]]);
+        $wizardId = $this->toId($wizardId);
 
-        if ($wizardId) {
-            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.register', 'action_create_payments', [[$wizardId]]]);
+        if ($wizardId > 0) {
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.register', 'action_create_payments', [[$wizardId]], [
+                'context' => [
+                    'active_model' => 'account.move',
+                    'active_ids' => [$moveId]
+                ]
+            ]]);
+        } else {
+            $this->logger->warning("Odoo: gagal membuat payment register untuk move #{$moveId}.");
         }
+    }
+
+    /**
+     * Pastikan setiap inbound payment method line pada journal memiliki akun
+     * "Outstanding Receipts". Odoo 19 memerlukan akun ini agar pembayaran
+     * menghasilkan jurnal dan merekonsiliasi invoice. Idempoten: hanya mengisi
+     * yang masih kosong.
+     */
+    private function ensureInboundOutstandingAccount(int $journalId): void
+    {
+        $uid = $this->authenticate();
+        $authCredential = $this->authCredential();
+
+        try {
+            $lines = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.method.line', 'search_read', [[
+                ['journal_id', '=', $journalId],
+                ['payment_type', '=', 'inbound'],
+            ]], ['fields' => ['name', 'payment_account_id']]]);
+
+            if (empty($lines)) {
+                return;
+            }
+
+            $missing = array_values(array_filter($lines, fn($l) => empty($l['payment_account_id'])));
+            if (empty($missing)) {
+                return;
+            }
+
+            $account = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.account', 'search', [[
+                ['name', 'ilike', 'Outstanding Receipts'],
+                ['account_type', '=', 'asset_current'],
+            ]], ['limit' => 1]]);
+
+            if (empty($account)) {
+                $account = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.account', 'search', [[
+                    ['name', 'ilike', 'Outstanding'],
+                    ['account_type', '=', 'asset_current'],
+                ]], ['limit' => 1]]);
+            }
+
+            if (empty($account)) {
+                $this->logger->warning('Odoo: akun "Outstanding Receipts" tidak ditemukan; pembayaran mungkin tidak terposting ke Accounting.');
+                return;
+            }
+            $accountId = (int) $account[0];
+
+            foreach ($missing as $line) {
+                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment.method.line', 'write', [[
+                    (int) $line['id'],
+                ], [
+                    'payment_account_id' => $accountId,
+                ]]]);
+                $this->logger->info("Odoo: mengisi outstanding account #{$accountId} pada payment method line #{$line['id']} (journal #{$journalId}).");
+            }
+        } catch (\Throwable $e) {
+            // Jangan gagalkan sync hanya karena auto-configure tidak berhasil.
+            $this->logger->warning('Odoo: gagal memastikan outstanding account: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Normalisasi hasil `create` Odoo: sebagian versi mengembalikan id (int),
+     * sebagian lain daftar id ([id]).
+     */
+    private function toId($value): int
+    {
+        if (is_array($value)) {
+            $value = $value[0] ?? 0;
+        }
+        return (int) $value;
     }
 
     public function syncCreditNote(int $originalMoveId, array $refundLines): void
@@ -209,23 +421,91 @@ class OdooSyncService
             ]);
 
             $lines[] = [0, 0, [
+                'name' => $item['product_name'] ?? '',
                 'product_id' => $productId,
                 'quantity' => (int) $item['quantity'],
-                'price_unit' => (float) $item['price']
+                'price_unit' => (float) $item['price'],
+                'tax_ids' => [[6, 0, []]],
             ]];
         }
 
-        $creditNoteId = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
+        $creditNoteId = $this->toId($this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'create', [[
             'move_type' => 'out_refund',
             'partner_id' => $partnerId,
             'invoice_date' => date('Y-m-d'),
             'ref' => 'Retur dari Invoice Odoo #' . $originalMoveId,
             'invoice_line_ids' => $lines
-        ]]]);
+        ]]]));
 
-        if ($creditNoteId) {
-            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[(int)$creditNoteId]]]);
+        if ($creditNoteId > 0) {
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'action_post', [[$creditNoteId]]]);
         }
+    }
+
+    /**
+     * Hapus move (invoice) di Odoo. Dipakai saat re-sync paksa supaya tidak
+     * meninggalkan invoice duplikat di modul Accounting. Pembayaran yang
+     * mereferensikan move ini juga dibatalkan/dihapus lebih dulu karena Odoo
+     * menolak menghapus invoice yang sudah direkonsiliasi dengan pembayaran.
+     */
+    public function deleteMove(int $moveId): void
+    {
+        $uid = $this->authenticate();
+        $authCredential = $this->authCredential();
+
+        // 1) Batalkan & hapus payment yang terkait move ini.
+        try {
+            $payments = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment', 'search', [[
+                ['reconciled_invoice_ids', 'in', [$moveId]],
+            ]]]);
+
+            foreach ((array) $payments as $paymentId) {
+                $paymentId = (int) $paymentId;
+
+                // Hapus dulu jurnal (move) milik payment bila ada.
+                try {
+                    $payment = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment', 'read', [[
+                        $paymentId,
+                    ]], ['fields' => ['move_id']]]);
+                    $paymentMoveId = $payment[0]['move_id'][0] ?? null;
+                    if ($paymentMoveId) {
+                        try {
+                            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'button_draft', [[(int) $paymentMoveId]]]);
+                        } catch (\Throwable $e) {
+                        }
+                        try {
+                            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'unlink', [[(int) $paymentMoveId]]]);
+                        } catch (\Throwable $e) {
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // lanjut
+                }
+
+                try {
+                    $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment', 'action_cancel', [[$paymentId]]]);
+                } catch (\Throwable $e) {
+                }
+                try {
+                    $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.payment', 'unlink', [[$paymentId]]]);
+                } catch (\Throwable $e) {
+                }
+            }
+        } catch (\Throwable $e) {
+            // lanjut ke penghapusan move
+        }
+
+        // 2) Batalkan & hapus move-nya.
+        try {
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'button_draft', [[$moveId]]]);
+        } catch (\Throwable $e) {
+            try {
+                $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'button_cancel', [[$moveId]]]);
+            } catch (\Throwable $e2) {
+            }
+        }
+
+        $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'account.move', 'unlink', [[$moveId]]]);
     }
 
     private function authenticate(): int

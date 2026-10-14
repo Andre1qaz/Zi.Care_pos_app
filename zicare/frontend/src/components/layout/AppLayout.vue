@@ -238,6 +238,7 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
+  Plug,
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -257,6 +258,7 @@ const navItems = [
   { to: '/reports', label: 'Laporan', icon: BarChart3, roles: ['administrator', 'manager'] },
   { to: '/users', label: 'Pengguna', icon: UserCog, roles: ['administrator'] },
   { to: '/audit-logs', label: 'Audit Log', icon: FileText, roles: ['administrator', 'manager'] },
+  { to: '/integration', label: 'Integrasi Odoo', icon: Plug, roles: ['administrator', 'manager'] },
 ]
 
 function canAccess(roles) {
@@ -278,6 +280,7 @@ const titles = {
   reports: 'Laporan',
   users: 'Manajemen Pengguna',
   'audit-logs': 'Audit Log',
+  integration: 'Integrasi Odoo',
 }
 
 const currentTitle = computed(() => titles[route.name] || 'Zi.CARE POS')

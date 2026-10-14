@@ -66,6 +66,7 @@ return [
             ['method' => 'get', 'path' => '/{id}/pdf', 'action' => 'pdf'],
             ['method' => 'post', 'path' => '/{id}/payment', 'action' => 'addPayment'],
             ['method' => 'get', 'path' => '/{id}/payments', 'action' => 'paymentHistory'],
+            ['method' => 'post', 'path' => '/{id}/sync', 'action' => 'sync'],
         ],
     ],
     '/api/v1/outstanding-payments' => [
@@ -99,6 +100,12 @@ return [
             ['method' => 'get', 'path' => '', 'action' => 'index'],
             ['method' => 'get', 'path' => '/{id}', 'action' => 'show'],
             ['method' => 'get', 'path' => '/stats', 'action' => 'stats'],
+        ],
+    ],
+    '/api/v1/integration' => [
+        'handler' => \App\Controllers\IntegrationController::class,
+        'routes' => [
+            ['method' => 'get', 'path' => '/odoo/status', 'action' => 'odooStatus'],
         ],
     ],
 ];

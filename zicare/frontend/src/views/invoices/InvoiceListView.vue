@@ -50,10 +50,21 @@
               <td class="text-center"><span class="badge" :class="inv.payment_status">{{ inv.payment_status }}</span></td>
               <td class="text-center"><span class="badge" :class="inv.sync_status">{{ inv.sync_status }}</span></td>
               <td class="text-center">
-                <router-link :to="`/invoices/${inv.id}`" class="btn btn-primary btn-sm">
-                  <Eye class="h-3.5 w-3.5" />
-                  Detail
-                </router-link>
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    v-if="canSync"
+                    class="btn btn-secondary btn-sm"
+                    :disabled="syncingId === inv.id"
+                    :title="inv.sync_status === 'synced' ? 'Sync ulang ke Odoo' : 'Kirim ke Odoo Accounting'"
+                    @click="syncInvoice(inv)"
+                  >
+                    <RefreshCw :class="['h-3.5 w-3.5', syncingId === inv.id && 'animate-spin']" />
+                  </button>
+                  <router-link :to="`/invoices/${inv.id}`" class="btn btn-primary btn-sm">
+                    <Eye class="h-3.5 w-3.5" />
+                    Detail
+                  </router-link>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -79,15 +90,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/services/api'
 import { toast } from '@/composables/feedback'
-import { Eye, Receipt } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import { Eye, Receipt, RefreshCw } from 'lucide-vue-next'
 
+const auth = useAuthStore()
 const invoices = ref([])
 const search = ref('')
 const statusFilter = ref('')
 const pagination = ref({ page: 1, limit: 20, total: 0, pages: 1 })
+const syncingId = ref(null)
+
+const canSync = computed(() => ['administrator', 'manager'].includes(auth.userRole))
 
 function formatCurrency(v) { return 'Rp ' + Number(v).toLocaleString('id-ID') }
 
@@ -123,6 +139,23 @@ function onFilterChange() {
 function changePage(page) {
   pagination.value.page = page
   load()
+}
+
+async function syncInvoice(inv) {
+  syncingId.value = inv.id
+  try {
+    const force = inv.sync_status === 'synced'
+    const { data } = await api.post(`/invoices/${inv.id}/sync`, null, {
+      params: force ? { force: 1 } : {}
+    })
+    toast.success(data?.message || `Invoice ${inv.invoice_number} tersinkron ke Odoo.`)
+    await load()
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Gagal sinkron ke Odoo.')
+    await load()
+  } finally {
+    syncingId.value = null
+  }
 }
 
 onMounted(load)

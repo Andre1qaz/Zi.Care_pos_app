@@ -20,6 +20,7 @@ class InvoiceController extends BaseController
                 'date_to'        => $this->request->getQuery('date_to'),
                 'search'         => $this->request->getQuery('search'),
                 'payment_status' => $this->request->getQuery('payment_status'),
+                'sync_status'    => $this->request->getQuery('sync_status'),
             ];
             $page = (int) ($this->request->getQuery('page') ?? 1);
             $limit = (int) ($this->request->getQuery('limit') ?? 20);
@@ -98,6 +99,51 @@ class InvoiceController extends BaseController
             
             $result = $this->di->getShared('invoiceService')->getPaymentHistory($id);
             return ResponseHelper::success($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
+
+    /**
+     * Kirim / kirim ulang invoice ini ke modul Accounting Odoo.
+     * Query/body: ?force=1 untuk menghapus move lama dan membuat ulang.
+     */
+    public function sync(int $id)
+    {
+        try {
+            $this->requireRole(['administrator', 'manager']);
+
+            $force = filter_var(
+                $this->request->getQuery('force') ?? ($this->getJsonBody()['force'] ?? false),
+                FILTER_VALIDATE_BOOLEAN
+            );
+
+            $invoiceService = $this->di->getShared('invoiceService');
+            // Pastikan invoice ada (lempar 404 bila tidak).
+            $invoiceService->get($id);
+
+            $ok = $this->di->getShared('odooSyncService')->retrySync($id, $force);
+            $invoice = $invoiceService->get($id);
+            $inv = $invoice['invoice'] ?? [];
+
+            $this->logAudit(
+                ($ok ? 'Synced' : 'Sync failed for') . ' invoice ' . ($inv['invoice_number'] ?? $id) . ' to Odoo',
+                'invoice',
+                $id
+            );
+
+            if (!$ok) {
+                return ResponseHelper::error(
+                    'Sinkronisasi ke Odoo gagal. Pastikan Odoo berjalan dan kredensial benar.',
+                    502,
+                    ['sync_status' => $inv['sync_status'] ?? null]
+                );
+            }
+
+            return ResponseHelper::success([
+                'sync_status'  => $inv['sync_status'] ?? null,
+                'odoo_move_id' => $inv['odoo_move_id'] ?? null,
+            ], 'Invoice berhasil disinkronkan ke Odoo');
         } catch (\Throwable $e) {
             return $this->handleException($e);
         }

@@ -88,6 +88,17 @@ class InvoiceRepository extends BaseRepository
             $conditions[] = 'payment_status IN (' . implode(', ', $placeholders) . ')';
         }
 
+        if (!empty($filters['sync_status'])) {
+            $syncStatuses = array_values((array) $filters['sync_status']);
+            $placeholders = [];
+            foreach ($syncStatuses as $index => $status) {
+                $key = 'sync_status_' . $index;
+                $placeholders[] = ':' . $key . ':';
+                $bind[$key] = $status;
+            }
+            $conditions[] = 'sync_status IN (' . implode(', ', $placeholders) . ')';
+        }
+
         if (!empty($filters['search'])) {
             $term = '%' . $filters['search'] . '%';
 
