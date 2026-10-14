@@ -131,6 +131,80 @@ class OdooSyncService
         }
     }
 
+    /**
+     * Kirim SEMUA produk & pelanggan POS ke Odoo (satu arah POS → Odoo).
+     * Berguna supaya master data tercermin di Odoo walau belum pernah dipakai
+     * bertransaksi. Idempoten: item yang sudah ada tidak diduplikasi (dicari
+     * berdasarkan SKU / email / nama).
+     *
+     * @return array Ringkasan hasil per kategori.
+     */
+    public function syncAllMaster(): array
+    {
+        if (!$this->config['enabled']) {
+            return [
+                'enabled'   => false,
+                'message'   => 'Sinkronisasi Odoo dimatikan (ODOO_SYNC_ENABLED=false).',
+                'products'  => ['synced' => 0, 'failed' => 0, 'total' => 0],
+                'customers' => ['synced' => 0, 'failed' => 0, 'total' => 0],
+            ];
+        }
+
+        $db = Di::getDefault()->getShared('db');
+
+        $products = $db->query(
+            "SELECT product_code, product_name, price FROM products WHERE is_active = 1"
+        )->fetchAll();
+
+        $customers = $db->query(
+            "SELECT customer_name, email, phone FROM customers"
+        )->fetchAll();
+
+        $prodOk = 0;
+        $prodFail = 0;
+        foreach ($products as $p) {
+            try {
+                $this->syncProduct([
+                    'name'  => $p['product_name'],
+                    'price' => (float) $p['price'],
+                    'sku'   => $p['product_code'] ?: 'SKU-000',
+                ]);
+                $prodOk++;
+            } catch (\Throwable $e) {
+                $prodFail++;
+                $this->logger->warning("Odoo master sync produk {$p['product_code']} gagal: " . $e->getMessage());
+            }
+        }
+
+        $custOk = 0;
+        $custFail = 0;
+        foreach ($customers as $c) {
+            try {
+                $name = trim((string) ($c['customer_name'] ?? '')) !== ''
+                    ? $c['customer_name']
+                    : 'Walk-in Customer';
+                $email = !empty($c['email']) && $c['email'] !== 'walkin@pos.com' ? $c['email'] : '';
+
+                $this->syncCustomer([
+                    'name'  => $name,
+                    'email' => $email,
+                    'phone' => $c['phone'] ?? '',
+                ]);
+                $custOk++;
+            } catch (\Throwable $e) {
+                $custFail++;
+                $this->logger->warning("Odoo master sync pelanggan {$c['customer_name']} gagal: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'enabled'   => true,
+            'message'   => 'Sinkronisasi master data selesai.',
+            'products'  => ['synced' => $prodOk, 'failed' => $prodFail, 'total' => count($products)],
+            'customers' => ['synced' => $custOk, 'failed' => $custFail, 'total' => count($customers)],
+        ];
+    }
+
     public function syncInvoice(int $invoiceId, bool $force = false): bool
     {
         $db = Di::getDefault()->getShared('db');

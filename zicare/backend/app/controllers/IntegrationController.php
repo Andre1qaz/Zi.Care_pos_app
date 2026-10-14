@@ -28,4 +28,22 @@ class IntegrationController extends BaseController
             return $this->handleException($e);
         }
     }
+
+    /**
+     * POST /api/v1/integration/odoo/sync-master
+     * Kirim semua produk & pelanggan POS ke Odoo (satu arah).
+     * Hanya administrator & manager.
+     */
+    public function syncMaster()
+    {
+        try {
+            $this->requireRole(['administrator', 'manager']);
+
+            $result = $this->di->getShared('odooSyncService')->syncAllMaster();
+
+            return ResponseHelper::success($result, $result['message'] ?? 'Sinkronisasi master data selesai.');
+        } catch (\Throwable $e) {
+            return $this->handleException($e);
+        }
+    }
 }

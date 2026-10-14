@@ -26,12 +26,30 @@ $db = $di->getShared('db');
 $syncService = $di->getShared('odooSyncService');
 
 // Opsi: --force untuk re-sync paksa (hapus & buat ulang move di Odoo),
-//        --id=NN untuk menyinkronkan satu invoice tertentu.
+//        --id=NN untuk menyinkronkan satu invoice tertentu,
+//        --master untuk mengirim SEMUA produk & pelanggan ke Odoo.
 $force = in_array('--force', $argv ?? [], true);
+$master = in_array('--master', $argv ?? [], true);
 $onlyId = 0;
 foreach (($argv ?? []) as $arg) {
     if (str_starts_with($arg, '--id=')) {
         $onlyId = (int) substr($arg, 5);
+    }
+}
+
+if ($master) {
+    echo "Menyinkronkan semua produk & pelanggan ke Odoo...\n";
+    try {
+        $summary = $syncService->syncAllMaster();
+        $p = $summary['products'];
+        $c = $summary['customers'];
+        echo "Produk   : {$p['synced']}/{$p['total']} sukses, {$p['failed']} gagal.\n";
+        echo "Pelanggan: {$c['synced']}/{$c['total']} sukses, {$c['failed']} gagal.\n";
+        $failCount = $p['failed'] + $c['failed'];
+        exit($failCount > 0 ? 1 : 0);
+    } catch (\Throwable $e) {
+        echo "FAILED: " . $e->getMessage() . "\n";
+        exit(1);
     }
 }
 

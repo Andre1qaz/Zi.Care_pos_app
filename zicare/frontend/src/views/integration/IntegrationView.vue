@@ -5,10 +5,16 @@
         <h1 class="page-title">Integrasi Odoo</h1>
         <p class="page-subtitle">Koneksi ke modul Accounting Odoo & sinkronisasi invoice</p>
       </div>
-      <button class="btn btn-secondary" :disabled="loadingStatus" @click="loadStatus">
-        <RefreshCw :class="['h-4 w-4', loadingStatus && 'animate-spin']" />
-        Uji Koneksi
-      </button>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn btn-primary" :disabled="syncingMaster" @click="syncMaster">
+          <Database :class="['h-4 w-4', syncingMaster && 'animate-spin']" />
+          {{ syncingMaster ? 'Menyinkron...' : 'Sinkron Produk & Pelanggan' }}
+        </button>
+        <button class="btn btn-secondary" :disabled="loadingStatus" @click="loadStatus">
+          <RefreshCw :class="['h-4 w-4', loadingStatus && 'animate-spin']" />
+          Uji Koneksi
+        </button>
+      </div>
     </div>
 
     <!-- Connection status -->
@@ -128,7 +134,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { toast } from '@/composables/feedback'
-import { RefreshCw, Wifi, WifiOff, Loader2, CheckCircle2 } from 'lucide-vue-next'
+import { RefreshCw, Wifi, WifiOff, Loader2, CheckCircle2, Database } from 'lucide-vue-next'
 
 const odoo = ref(null)
 const connected = ref(false)
@@ -138,6 +144,7 @@ const invoices = ref([])
 const loadingInvoices = ref(false)
 const syncingId = ref(null)
 const syncingAll = ref(false)
+const syncingMaster = ref(false)
 
 const pendingInvoices = computed(() =>
   invoices.value.filter((inv) => inv.sync_status !== 'synced')
@@ -213,6 +220,20 @@ async function syncOne(inv) {
   } finally {
     syncingId.value = null
     await loadInvoices()
+  }
+}
+
+async function syncMaster() {
+  syncingMaster.value = true
+  try {
+    const { data } = await api.post('/integration/odoo/sync-master')
+    const p = data.data.products
+    const c = data.data.customers
+    toast.success(`Master data tersinkron: ${p.synced}/${p.total} produk, ${c.synced}/${c.total} pelanggan.`)
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Gagal sinkron master data ke Odoo.')
+  } finally {
+    syncingMaster.value = false
   }
 }
 

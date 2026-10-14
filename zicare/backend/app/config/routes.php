@@ -106,6 +106,7 @@ return [
         'handler' => \App\Controllers\IntegrationController::class,
         'routes' => [
             ['method' => 'get', 'path' => '/odoo/status', 'action' => 'odooStatus'],
+            ['method' => 'post', 'path' => '/odoo/sync-master', 'action' => 'syncMaster'],
         ],
     ],
 ];
