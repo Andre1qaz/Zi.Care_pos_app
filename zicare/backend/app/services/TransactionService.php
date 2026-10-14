@@ -12,11 +12,13 @@ use App\Models\Invoice;
 use App\Models\InvoiceDetail;
 use App\Models\Payment;
 use App\Repositories\ProductRepository;
+use App\Repositories\StockMovementRepository;
 use Phalcon\Di\Di;
 
 class TransactionService
 {
     private ProductRepository $productRepository;
+    private StockMovementRepository $stockMovementRepository;
     private PaymentService $paymentService;
     private OdooSyncService $odooSyncService;
 
@@ -24,6 +26,7 @@ class TransactionService
     {
         $di = Di::getDefault();
         $this->productRepository = $di->getShared('productRepository');
+        $this->stockMovementRepository = $di->getShared('stockMovementRepository');
         $this->paymentService = $di->getShared('paymentService');
         $this->odooSyncService = $di->getShared('odooSyncService');
     }
@@ -114,9 +117,24 @@ class TransactionService
                 $detail->save();
 
                 if ($line['product_type'] === 'barang') {
+                    $before = $this->productRepository->getStock((int) $line['product_id']);
+
                     if (!$this->productRepository->decrementStock($line['product_id'], $line['quantity'])) {
                         throw new AppException('Failed to update stock');
                     }
+
+                    // Catat pergerakan stok (kartu stok) untuk penjualan ini.
+                    $this->stockMovementRepository->record([
+                        'product_id'    => (int) $line['product_id'],
+                        'movement_type' => 'sale',
+                        'quantity'      => -$line['quantity'],
+                        'stock_before'  => $before,
+                        'stock_after'   => $before - $line['quantity'],
+                        'reason'        => 'Penjualan',
+                        'reference'     => $invoice->invoice_number,
+                        'invoice_id'    => (int) $invoice->id,
+                        'user_id'       => $cashierId,
+                    ]);
                 }
             }
 

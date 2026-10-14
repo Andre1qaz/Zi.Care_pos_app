@@ -283,7 +283,7 @@
 
             <div class="form-group">
               <label>Metode Pembayaran</label>
-              <select v-model="paymentForm.payment_method" class="w-full" required>
+              <select v-model="paymentForm.payment_method" required>
                 <option value="cash">Tunai</option>
                 <option value="qris">QRIS</option>
                 <option value="transfer">Transfer</option>

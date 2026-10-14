@@ -63,6 +63,7 @@ $di->setShared('productRepository', fn () => new \App\Repositories\ProductReposi
 $di->setShared('categoryRepository', fn () => new \App\Repositories\CategoryRepository());
 $di->setShared('customerRepository', fn () => new \App\Repositories\CustomerRepository());
 $di->setShared('invoiceRepository', fn () => new \App\Repositories\InvoiceRepository());
+$di->setShared('stockMovementRepository', fn () => new \App\Repositories\StockMovementRepository());
 
 // Services
 $di->setShared('authService', fn () => new \App\Services\AuthService());

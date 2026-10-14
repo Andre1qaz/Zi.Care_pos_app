@@ -23,6 +23,16 @@ class ProductRepository extends BaseRepository
             $bind['category_id'] = (int) $filters['category_id'];
         }
 
+        if (!empty($filters['product_type'])) {
+            $conditions[] = 'product_type = :product_type:';
+            $bind['product_type'] = (string) $filters['product_type'];
+        }
+
+        if (!empty($filters['service_status'])) {
+            $conditions[] = 'service_status = :service_status:';
+            $bind['service_status'] = (string) $filters['service_status'];
+        }
+
         if (isset($filters['low_stock'])) {
             $conditions[] = 'product_type = :product_type_barang: AND stock <= :low_stock:';
             $bind['product_type_barang'] = 'barang';
@@ -61,6 +71,26 @@ class ProductRepository extends BaseRepository
             'conditions' => 'product_code = :code:',
             'bind'       => ['code' => $code],
         ]) ?: null;
+    }
+
+    /**
+     * Baca stok terkini (dipakai untuk mencatat stock_before/after).
+     */
+    public function getStock(int $productId): int
+    {
+        $row = $this->db()->query('SELECT stock FROM products WHERE id = ?', [$productId])->fetch();
+        return $row ? (int) $row['stock'] : 0;
+    }
+
+    /**
+     * Set stok ke nilai absolut (stok opname / penyesuaian).
+     */
+    public function setStock(int $productId, int $newStock): void
+    {
+        $this->db()->execute(
+            'UPDATE products SET stock = ? WHERE id = ?',
+            [$newStock, $productId]
+        );
     }
 
     public function decrementStock(int $productId, int $quantity): bool

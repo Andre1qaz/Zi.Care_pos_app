@@ -38,7 +38,7 @@
             <select
               v-model="categoryFilter"
               @change="loadProducts"
-              class="input sm:w-56"
+              class="sm:w-56"
             >
               <option value="">Semua Kategori</option>
               <option v-for="c in productStore.categories" :key="c.id" :value="c.id">
@@ -52,12 +52,12 @@
               v-for="product in productStore.products"
               :key="product.id"
               :class="[
-                'group relative flex h-full cursor-pointer flex-col rounded-3xl border-2 p-4 transition-all duration-200',
+                'group relative flex h-full flex-col rounded-3xl border-2 p-4 transition-all duration-200',
                 product.product_type === 'jasa' && product.service_status !== 'tersedia'
                   ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-50'
                   : (product.product_type === 'barang' && product.stock <= 0
                       ? 'cursor-not-allowed border-slate-200 bg-slate-50 opacity-60'
-                      : 'border-slate-200 bg-white hover:-translate-y-1 hover:border-primary-400 hover:bg-primary-50/40 hover:shadow-bubble')
+                      : 'cursor-pointer border-slate-200 bg-white hover:-translate-y-1 hover:border-primary-400 hover:bg-primary-50/40 hover:shadow-bubble')
               ]"
               @click="product.product_type === 'jasa' && product.service_status !== 'tersedia' ? null : cart.addItem(product)"
             >
@@ -126,7 +126,6 @@
               </div>
               <select
                 v-model="selectedCustomerId"
-                class="input"
               >
                 <option :value="null">Walk-in Customer (Umum)</option>
                 <option

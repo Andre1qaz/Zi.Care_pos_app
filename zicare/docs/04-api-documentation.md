@@ -117,11 +117,11 @@ Content-Type: application/json
 ```json
 {
   "product_code": "PRD-006",
-  "product_name": "Es Jeruk",
-  "description": "Es jeruk segar",
-  "price": 8000,
+  "product_name": "Stetoskop Anak",
+  "description": "Stetoskop akustik ukuran anak",
+  "price": 230000,
   "stock": 100,
-  "category_id": 2
+  "category_id": 1
 }
 ```
 
@@ -140,7 +140,7 @@ Soft delete (sets is_active = 0)
 ### POST /categories
 
 ```json
-{ "category_name": "Dessert", "description": "Makanan penutup" }
+{ "category_name": "Alat Diagnostik", "description": "Peralatan untuk pemeriksaan & diagnostik pasien" }
 ```
 
 ### PUT /categories/{id}

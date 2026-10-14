@@ -37,6 +37,7 @@ try {
         '003_fix_service_stock.sql',
         '004_partial_payment_system.sql',
         '005_fix_user_passwords.sql',
+        '006_stock_movements.sql',
     ];
 
     foreach ($migrations as $migrationFile) {

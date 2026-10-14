@@ -26,6 +26,8 @@ return [
         'routes' => [
             ['method' => 'get', 'path' => '', 'action' => 'index'],
             ['method' => 'get', 'path' => '/{id}', 'action' => 'show'],
+            ['method' => 'get', 'path' => '/{id}/stock-movements', 'action' => 'stockMovements'],
+            ['method' => 'post', 'path' => '/{id}/stock-adjustments', 'action' => 'adjustStock'],
             ['method' => 'post', 'path' => '', 'action' => 'create'],
             ['method' => 'put', 'path' => '/{id}', 'action' => 'update'],
             ['method' => 'delete', 'path' => '/{id}', 'action' => 'delete'],

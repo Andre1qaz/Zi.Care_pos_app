@@ -31,10 +31,11 @@ mysql -u root -p < database/migrations/002_add_product_type.sql
 mysql -u root -p < database/migrations/003_fix_service_stock.sql
 mysql -u root -p < database/migrations/004_partial_payment_system.sql
 mysql -u root -p < database/migrations/005_fix_user_passwords.sql
+mysql -u root -p < database/migrations/006_stock_movements.sql
 mysql -u root -p < database/seeds/001_seed_data.sql   # idempoten, boleh dijalankan ulang
 ```
 
-> Kelima file migrasi di atas adalah set lengkap di folder `database/migrations/`.
+> Keenam file migrasi di atas adalah set lengkap di folder `database/migrations/`.
 
 ### 2. Backend
 

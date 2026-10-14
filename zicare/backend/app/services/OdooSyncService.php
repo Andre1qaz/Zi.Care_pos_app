@@ -153,7 +153,7 @@ class OdooSyncService
         $db = Di::getDefault()->getShared('db');
 
         $products = $db->query(
-            "SELECT product_code, product_name, price FROM products WHERE is_active = 1"
+            "SELECT product_code, product_name, price, product_type FROM products WHERE is_active = 1"
         )->fetchAll();
 
         $customers = $db->query(
@@ -165,9 +165,10 @@ class OdooSyncService
         foreach ($products as $p) {
             try {
                 $this->syncProduct([
-                    'name'  => $p['product_name'],
-                    'price' => (float) $p['price'],
-                    'sku'   => $p['product_code'] ?: 'SKU-000',
+                    'name'         => $p['product_name'],
+                    'price'        => (float) $p['price'],
+                    'sku'          => $p['product_code'] ?: 'SKU-000',
+                    'product_type' => $p['product_type'] ?? 'barang',
                 ]);
                 $prodOk++;
             } catch (\Throwable $e) {
@@ -340,13 +341,26 @@ class OdooSyncService
         $authCredential = $this->authCredential();
         $existing = $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'search', [[['default_code', '=', $data['sku']]]], ['limit' => 1]]);
 
-        if (!empty($existing)) return (int) $existing[0];
+        if (!empty($existing)) {
+            // Produk sudah ada: perbarui nama & harga agar master POS tetap
+            // tercermin di Odoo (idempotent, bukan hanya create-if-missing).
+            $existingId = (int) $existing[0];
+            $this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'write', [[$existingId], [
+                'name'       => $data['name'],
+                'list_price' => $data['price'],
+            ]]]);
+
+            return $existingId;
+        }
+
+        // Barang -> 'consu', Jasa -> 'service'
+        $odooType = ($data['product_type'] ?? 'barang') === 'jasa' ? 'service' : 'consu';
 
         return $this->toId($this->jsonRpc('object', 'execute_kw', [$this->config['db'], $uid, $authCredential, 'product.product', 'create', [[
             'name' => $data['name'],
             'list_price' => $data['price'],
             'default_code' => $data['sku'],
-            'type' => 'consu',
+            'type' => $odooType,
             'sale_ok' => true,
             // Produk POS tidak memakai pajak default Odoo; total invoice POS
             // sudah final. Kosongkan pajak agar harga tidak bertambah.

@@ -100,20 +100,20 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Low stock notifications -->
+            <!-- Low stock & unavailable service notifications -->
             <div class="relative">
               <button
                 type="button"
                 class="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-soft transition-all hover:-translate-y-0.5 hover:text-primary-600"
-                title="Notifikasi stok menipis"
+                title="Notifikasi stok menipis & jasa tidak tersedia"
                 @click="toggleLowStock"
               >
                 <Bell class="h-5 w-5" />
                 <span
-                  v-if="lowStock.length"
+                  v-if="notificationCount"
                   class="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-bold text-white shadow"
                 >
-                  {{ lowStock.length > 99 ? '99+' : lowStock.length }}
+                  {{ notificationCount > 99 ? '99+' : notificationCount }}
                 </span>
               </button>
 
@@ -126,52 +126,94 @@
                 >
                   <div class="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
                     <div>
-                      <p class="text-sm font-bold text-slate-900">Stok Menipis</p>
-                      <p class="text-xs text-slate-500">Barang dengan stok ≤ {{ lowStockThreshold }}</p>
+                      <p class="text-sm font-bold text-slate-900">Notifikasi</p>
+                      <p class="text-xs text-slate-500">Stok menipis (≤ {{ lowStockThreshold }}) & jasa tidak tersedia</p>
                     </div>
                     <button
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                       title="Segarkan"
-                      @click="fetchLowStock"
+                      @click="fetchNotifications"
                     >
-                      <RefreshCw :class="['h-4 w-4', loadingLowStock && 'animate-spin']" />
+                      <RefreshCw :class="['h-4 w-4', loadingNotifications && 'animate-spin']" />
                     </button>
                   </div>
 
                   <div class="max-h-80 overflow-y-auto">
-                    <div v-if="loadingLowStock" class="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                    <div v-if="loadingNotifications" class="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
                       <span class="spinner"></span> Memuat...
                     </div>
-                    <div v-else-if="!lowStock.length" class="empty-state py-10">
-                      <div class="empty-icon">
-                        <CheckCircle2 class="h-7 w-7" />
+
+                    <template v-else>
+                      <!-- Stok menipis -->
+                      <div class="flex items-center justify-between gap-2 px-5 pb-1 pt-3">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Stok Menipis</p>
+                        <span :class="['badge', lowStock.length ? 'badge-warning' : 'badge-slate']">
+                          {{ lowStock.length }}
+                        </span>
                       </div>
-                      <p class="text-sm text-slate-500">Semua stok aman 👍</p>
-                    </div>
-                    <ul v-else class="divide-y divide-slate-100">
-                      <li
-                        v-for="p in lowStock"
-                        :key="p.id"
-                        class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
-                      >
-                        <span
-                          :class="[
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-                            p.stock <= 0 ? 'bg-danger-100 text-danger-600' : 'bg-warning-100 text-warning-600'
-                          ]"
-                        >
-                          <AlertTriangle class="h-4 w-4" />
-                        </span>
-                        <div class="min-w-0 flex-1">
-                          <p class="truncate text-sm font-semibold text-slate-800">{{ p.product_name }}</p>
-                          <p class="font-mono text-xs text-slate-400">{{ p.product_code }}</p>
+
+                      <div v-if="!lowStock.length" class="empty-state py-6">
+                        <div class="empty-icon">
+                          <CheckCircle2 class="h-6 w-6" />
                         </div>
-                        <span :class="['badge', p.stock <= 0 ? 'badge-danger' : 'badge-warning']">
-                          {{ p.stock <= 0 ? 'Habis' : 'Sisa ' + p.stock }}
+                        <p class="text-sm text-slate-500">Semua stok aman 👍</p>
+                      </div>
+                      <ul v-else class="divide-y divide-slate-100">
+                        <li
+                          v-for="p in lowStock"
+                          :key="p.id"
+                          class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
+                        >
+                          <span
+                            :class="[
+                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
+                              p.stock <= 0 ? 'bg-danger-100 text-danger-600' : 'bg-warning-100 text-warning-600'
+                            ]"
+                          >
+                            <AlertTriangle class="h-4 w-4" />
+                          </span>
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-slate-800">{{ p.product_name }}</p>
+                            <p class="font-mono text-xs text-slate-400">{{ p.product_code }}</p>
+                          </div>
+                          <span :class="['badge', p.stock <= 0 ? 'badge-danger' : 'badge-warning']">
+                            {{ p.stock <= 0 ? 'Habis' : 'Sisa ' + p.stock }}
+                          </span>
+                        </li>
+                      </ul>
+
+                      <!-- Jasa tidak tersedia -->
+                      <div class="flex items-center justify-between gap-2 border-t border-slate-100 px-5 pb-1 pt-3">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Jasa Tidak Tersedia</p>
+                        <span :class="['badge', unavailableServices.length ? 'badge-danger' : 'badge-success']">
+                          {{ unavailableServices.length }}
                         </span>
-                      </li>
-                    </ul>
+                      </div>
+
+                      <div v-if="!unavailableServices.length" class="empty-state py-6">
+                        <div class="empty-icon">
+                          <CheckCircle2 class="h-6 w-6" />
+                        </div>
+                        <p class="text-sm text-slate-500">Semua jasa tersedia 👍</p>
+                      </div>
+                      <ul v-else class="divide-y divide-slate-100">
+                        <li
+                          v-for="s in unavailableServices"
+                          :key="s.id"
+                          class="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
+                        >
+                          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                            <Ban class="h-4 w-4" />
+                          </span>
+                          <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-slate-800">{{ s.product_name }}</p>
+                            <p class="font-mono text-xs text-slate-400">{{ s.product_code }}</p>
+                          </div>
+                          <span class="badge badge-slate">Nonaktif</span>
+                        </li>
+                      </ul>
+                    </template>
                   </div>
 
                   <button
@@ -238,6 +280,7 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
+  Ban,
   Plug,
 } from 'lucide-vue-next'
 
@@ -274,6 +317,7 @@ const titles = {
   'invoice-detail': 'Detail Invoice',
   'outstanding-payments': 'Pembayaran Tertunda',
   products: 'Manajemen Produk',
+  'product-stock': 'Kartu Stok',
   categories: 'Kategori',
   customers: 'Pelanggan',
   'customer-history': 'Riwayat Pelanggan',
@@ -309,30 +353,38 @@ function logout() {
   router.push('/login')
 }
 
-// ---- Low stock notifications ----
+// ---- Low stock & unavailable service notifications ----
 const lowStockThreshold = 10
 const lowStock = ref([])
+const unavailableServices = ref([])
 const showLowStock = ref(false)
-const loadingLowStock = ref(false)
+const loadingNotifications = ref(false)
 
-async function fetchLowStock() {
-  loadingLowStock.value = true
+const notificationCount = computed(() => lowStock.value.length + unavailableServices.value.length)
+
+async function fetchNotifications() {
+  loadingNotifications.value = true
   try {
-    const { data } = await api.get('/products', {
-      params: { low_stock: lowStockThreshold, limit: 100 }
-    })
-    lowStock.value = Array.isArray(data.data) ? data.data : []
+    const [stockRes, serviceRes] = await Promise.all([
+      api.get('/products', { params: { low_stock: lowStockThreshold, limit: 100 } }),
+      api.get('/products', {
+        params: { product_type: 'jasa', service_status: 'tidak_tersedia', limit: 100 }
+      })
+    ])
+    lowStock.value = Array.isArray(stockRes.data.data) ? stockRes.data.data : []
+    unavailableServices.value = Array.isArray(serviceRes.data.data) ? serviceRes.data.data : []
   } catch {
     // Keep the bell quiet if the request fails (e.g. offline).
     lowStock.value = []
+    unavailableServices.value = []
   } finally {
-    loadingLowStock.value = false
+    loadingNotifications.value = false
   }
 }
 
 function toggleLowStock() {
   showLowStock.value = !showLowStock.value
-  if (showLowStock.value) fetchLowStock()
+  if (showLowStock.value) fetchNotifications()
 }
 
 function goToProducts() {
@@ -340,7 +392,7 @@ function goToProducts() {
   router.push('/products')
 }
 
-onMounted(fetchLowStock)
+onMounted(fetchNotifications)
 </script>
 
 <style scoped>

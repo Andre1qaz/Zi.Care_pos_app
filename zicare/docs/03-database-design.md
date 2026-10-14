@@ -19,6 +19,9 @@ erDiagram
     invoices ||--o{ payments : "paid_by"
     users ||--o{ audit_logs : "logged_by"
     invoices ||--o{ odoo_sync_logs : "synced"
+    products ||--o{ stock_movements : "moves"
+    invoices ||--o{ stock_movements : "sold_in"
+    users ||--o{ stock_movements : "recorded_by"
 
     roles {
         tinyint id PK
@@ -126,6 +129,20 @@ erDiagram
         datetime synced_at
         datetime created_at
     }
+
+    stock_movements {
+        bigint id PK
+        int product_id FK
+        enum movement_type
+        int quantity
+        int stock_before
+        int stock_after
+        varchar reason
+        varchar reference
+        int invoice_id FK
+        int user_id FK
+        datetime created_at
+    }
 ```
 
 ---
@@ -165,6 +182,9 @@ erDiagram
 | products | invoice_details | 1:N | RESTRICT |
 | users | audit_logs | 1:N | SET NULL |
 | invoices | odoo_sync_logs | 1:N | CASCADE |
+| products | stock_movements | 1:N | CASCADE |
+| invoices | stock_movements | 1:N | SET NULL |
+| users | stock_movements | 1:N | SET NULL |
 
 ---
 
@@ -202,6 +222,13 @@ erDiagram
 ### payments.payment_status
 - `pending`, `paid`, `failed`, `cancelled`
 
+### stock_movements.movement_type
+- `sale` (keluar, dari penjualan)
+- `in` (masuk, penerimaan barang)
+- `return` (masuk, retur pelanggan)
+- `adjustment` (koreksi manual +/-)
+- `opname` (hasil hitung fisik, nilai absolut)
+
 ---
 
 ## 7. Migration Files
@@ -213,6 +240,7 @@ erDiagram
 | `003_fix_service_stock.sql` | Perbaikan stok/status untuk produk jasa |
 | `004_partial_payment_system.sql` | Kolom pembayaran parsial + status `unpaid/overdue` |
 | `005_fix_user_passwords.sql` | Normalisasi hash password user |
+| `006_stock_movements.sql` | Tabel `stock_movements` (kartu stok) + saldo awal |
 
 See `database/migrations/` for executable SQL.
 

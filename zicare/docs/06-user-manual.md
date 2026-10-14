@@ -63,6 +63,16 @@ Menampilkan:
 - **Filter:** pilih kategori
 - **Stok Rendah:** baris merah jika stok ≤ 10
 
+### Kartu Stok & Stok Opname (Admin & Manager)
+
+- **Kartu Stok:** klik ikon riwayat pada kolom Aksi di baris produk (hanya produk bertipe *barang*) untuk membuka halaman kartu stok.
+- Halaman kartu stok menampilkan stok saat ini, ringkasan **Total Masuk / Total Keluar / Jumlah Pergerakan**, dan tabel riwayat pergerakan (waktu, jenis, perubahan, stok sebelum → sesudah, alasan, referensi, pengguna).
+- Filter pergerakan berdasarkan jenis dan rentang tanggal.
+- **Sesuaikan Stok:** tombol pada halaman kartu stok, dengan dua metode:
+  - **Stok Opname** – masukkan hasil hitung fisik; sistem menghitung selisih otomatis.
+  - **Tambah / Kurangi** – masukkan selisih (angka negatif untuk mengurangi).
+  - **Alasan wajib diisi**; referensi opsional. Perubahan stok lewat kartu stok ini dicatat sebagai pergerakan dan tercatat di audit log.
+
 ---
 
 ## 6. Manajemen Kategori (Admin)

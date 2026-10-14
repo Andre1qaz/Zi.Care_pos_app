@@ -8,7 +8,7 @@
       <select
         v-model="dateRange"
         @change="fetchStats"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-inner-soft transition-all duration-200 hover:border-slate-300 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10"
+        class="w-auto"
       >
         <option value="today">Hari Ini</option>
         <option value="week">7 Hari Terakhir</option>

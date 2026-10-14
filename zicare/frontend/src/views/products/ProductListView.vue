@@ -44,7 +44,7 @@
               <th>Kategori</th>
               <th>Harga</th>
               <th>Stok/Status</th>
-              <th v-if="canManage" class="text-right">Aksi</th>
+              <th v-if="canViewStock" class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -80,9 +80,18 @@
                   {{ p.service_status === 'tersedia' ? 'Tersedia' : 'Tidak Tersedia' }}
                 </span>
               </td>
-              <td v-if="canManage" class="text-right">
+              <td v-if="canViewStock" class="text-right">
                 <div class="flex justify-end gap-2">
                   <button
+                    v-if="p.product_type === 'barang'"
+                    @click="goToStock(p)"
+                    class="btn btn-secondary btn-icon-sm"
+                    title="Kartu Stok"
+                  >
+                    <History class="h-4 w-4" />
+                  </button>
+                  <button
+                    v-if="canManage"
                     @click="editProduct(p)"
                     class="btn btn-secondary btn-icon-sm"
                     title="Edit"
@@ -90,6 +99,7 @@
                     <Pencil class="h-4 w-4" />
                   </button>
                   <button
+                    v-if="canManage"
                     @click="removeProduct(p.id)"
                     class="btn btn-danger btn-icon-sm"
                     title="Hapus"
@@ -208,14 +218,17 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProductStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
-import { Plus, Pencil, Trash2, Package, X } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Package, X, History } from 'lucide-vue-next'
 import { toast, confirmDialog } from '@/composables/feedback'
 
 const store = useProductStore()
 const auth = useAuthStore()
+const router = useRouter()
 const canManage = computed(() => auth.userRole === 'administrator')
+const canViewStock = computed(() => ['administrator', 'manager'].includes(auth.userRole))
 const search = ref('')
 const categoryFilter = ref('')
 const showForm = ref(false)
@@ -276,6 +289,10 @@ function changePage(page) {
 function editProduct(p) {
   form.value = { ...p }
   showForm.value = true
+}
+
+function goToStock(p) {
+  router.push({ name: 'product-stock', params: { id: p.id } })
 }
 
 function resetForm() {

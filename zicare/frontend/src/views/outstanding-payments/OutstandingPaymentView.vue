@@ -75,7 +75,7 @@
         </div>
         <div>
           <label class="mb-2 block text-sm font-semibold text-slate-700">Status</label>
-          <select v-model="statusFilter" @change="loadInvoices" class="input w-48">
+          <select v-model="statusFilter" @change="loadInvoices" class="w-48">
             <option value="">Semua Status</option>
             <option value="unpaid">Belum Dibayar</option>
             <option value="partial">Dibayar Sebagian</option>
@@ -200,7 +200,7 @@
 
             <div class="form-group">
               <label>Metode Pembayaran</label>
-              <select v-model="paymentForm.payment_method" class="w-full" required>
+              <select v-model="paymentForm.payment_method" required>
                 <option value="cash">Tunai</option>
                 <option value="qris">QRIS</option>
                 <option value="transfer">Transfer</option>

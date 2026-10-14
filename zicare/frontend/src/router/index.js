@@ -27,6 +27,12 @@ const routes = [
         meta: { roles: ['administrator', 'manager'] }
       },
       {
+        path: 'products/:id/stock',
+        name: 'product-stock',
+        component: () => import('@/views/products/StockCardView.vue'),
+        meta: { roles: ['administrator', 'manager'] }
+      },
+      {
         path: 'categories',
         name: 'categories',
         component: () => import('@/views/categories/CategoryListView.vue'),
