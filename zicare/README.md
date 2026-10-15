@@ -31,11 +31,9 @@ mysql -u root -p < database/migrations/002_add_product_type.sql
 mysql -u root -p < database/migrations/003_fix_service_stock.sql
 mysql -u root -p < database/migrations/004_partial_payment_system.sql
 mysql -u root -p < database/migrations/005_fix_user_passwords.sql
-mysql -u root -p < database/migrations/006_stock_movements.sql
 mysql -u root -p < database/seeds/001_seed_data.sql   # idempoten, boleh dijalankan ulang
 ```
-
-> Keenam file migrasi di atas adalah set lengkap di folder `database/migrations/`.
+> Kelima file migrasi di atas adalah set lengkap di folder `database/migrations/`.
 
 ### 2. Backend
 
@@ -46,7 +44,7 @@ copy .env.example .env        # Windows — lalu isi DB + JWT + kredensial Odoo
 ```
 
 Jalankan dev server:
-
+dengan menjalankan dev server di dalam sistem docker yanga da di dalam backend
 ```bash
 php -S localhost:8090 -t public public/router.php
 ```
@@ -79,7 +77,7 @@ dari backend POS ada di `backend/.env` (`ODOO_API_KEY` / `ODOO_PASSWORD`).
   cd backend
   php cli/sync_odoo.php
   ```
-
+struktur api key sudah di tambahkan di dalam bagian env di dalam bagian di dalam project sistem backend. 
 ## Project Structure
 
 ```
@@ -117,3 +115,5 @@ zicare/
 ## License
 
 Proprietary – Internal Use Only
+
+ditambahkan di dalam bagian env yang berada adalah sistem di dalam frontend

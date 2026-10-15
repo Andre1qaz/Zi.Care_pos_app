@@ -374,14 +374,14 @@ Log Sync Activity
 
 ### Competitive Advantages:
 
-| Aspect | Traditional POS | Zi.CARE POS |
-|--------|----------------|-------------|
+| Aspect      | Traditional POS | Zi.CARE POS |
+|--------     |---------------- |-------------|
 | Integration | Manual/None | Odoo Auto-sync |
-| Real-time | Delayed | Real-time |
-| Mobile | Desktop only | Web-based (any device) |
+| Real-time   | Delayed | Real-time |
+| Mobile      | Desktop only | Web-based (any device) |
 | Scalability | Limited | Highly scalable |
-| Cost | High upfront | Cost-effective |
-| Support | Vendor lock-in | Open-source friendly |
+| Cost        | High upfront | Cost-effective |
+| Support     | Vendor lock-in | Open-source friendly |
 
 ### Script:
 "Zi.CARE POS memiliki competitive advantages signifikan dibandingkan traditional POS. Integrasi otomatis dengan Odoo, real-time updates, web-based untuk multi-device, highly scalable, cost-effective, dan open-source friendly."
