@@ -107,6 +107,8 @@ Content-Type: application/json
 |-------|------|-------------|
 | search | string | Search by name/code |
 | category_id | int | Filter by category |
+| product_type | string | Filter by type: `barang` or `jasa` |
+| service_status | string | Filter jasa by status: `tersedia` or `tidak_tersedia` |
 | low_stock | int | Filter stock <= value |
 | page | int | Page number (default 1) |
 | limit | int | Items per page (default 20) |
