@@ -39,5 +39,21 @@ return [
         'env'   => $_ENV['APP_ENV'] ?? 'production',
         'debug' => filter_var($_ENV['APP_DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN),
         'url'   => $_ENV['APP_URL'] ?? 'http://localhost',
+        'version' => $_ENV['APP_VERSION'] ?? '1.0.0',
+        // Bila true, endpoint login menolak semua percobaan dengan 503
+        // (mode perawatan) agar frontend bisa menampilkan pesan yang tepat.
+        'maintenance' => filter_var($_ENV['APP_MAINTENANCE'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    ],
+    'security' => [
+        // Rate limiting login: jumlah percobaan gagal sebelum akun dikunci.
+        'max_login_attempts' => (int) ($_ENV['LOGIN_MAX_ATTEMPTS'] ?? 5),
+        'lockout_minutes'    => (int) ($_ENV['LOGIN_LOCKOUT_MINUTES'] ?? 15),
+        // "Ingat saya": umur token lebih panjang (default 30 hari).
+        'remember_expiry'    => (int) ($_ENV['JWT_REMEMBER_EXPIRY'] ?? 2592000),
+        // Masa berlaku link reset password (detik, default 1 jam).
+        'password_reset_ttl' => (int) ($_ENV['PASSWORD_RESET_TTL'] ?? 3600),
+        // Masa berlaku challenge token 2FA (detik, default 5 menit).
+        'two_factor_ttl'     => (int) ($_ENV['TWO_FACTOR_CHALLENGE_TTL'] ?? 300),
+        'totp_issuer'        => $_ENV['TOTP_ISSUER'] ?? 'Zi.CARE POS',
     ],
 ];

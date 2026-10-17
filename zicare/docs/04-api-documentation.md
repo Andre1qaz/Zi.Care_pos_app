@@ -55,36 +55,173 @@ Content-Type: application/json
 
 ## Auth Module
 
+Endpoint publik (tanpa token): `POST /auth/login`, `POST /auth/verify-2fa`,
+`POST /auth/forgot-password`, `POST /auth/reset-password`, `GET /auth/status`.
+Seluruh endpoint lain memerlukan `Authorization: Bearer <token>`.
+
 ### POST /auth/login
 
 **Request:**
 ```json
 {
   "email": "cashier@pos.local",
-  "password": "Cashier@123"
+  "password": "Cashier@123",
+  "remember": false
 }
 ```
 
-**Response:**
+`remember` (opsional, default `false`): bila `true`, token umur panjang
+(~30 hari, `JWT_REMEMBER_EXPIRY`) diterbitkan dan disimpan klien di localStorage;
+bila `false`, token sesi (8 jam) diterbitkan.
+
+**Response (sukses, tanpa 2FA):**
 ```json
 {
   "success": true,
   "message": "Login successful",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIs...",
+    "expires_in": 28800,
+    "remember": false,
     "user": {
       "id": 3,
       "name": "Cashier",
       "email": "cashier@pos.local",
       "role": "cashier"
+    },
+    "last_login": {
+      "at": "2026-01-10 08:15:00",
+      "ip": "127.0.0.1",
+      "user_agent": "Mozilla/5.0 ...",
+      "first_time": false
     }
   }
 }
 ```
 
+`last_login` berisi info login *sebelum* yang sekarang (untuk ditampilkan ke
+user). `first_time: true` bila ini login pertama.
+
+**Response (2FA aktif — tahap satu):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "requires_2fa": true,
+    "challenge_token": "eyJhbGciOiJIUzI1NiIs...",
+    "message": "Masukkan kode 6 digit dari aplikasi authenticator Anda."
+  }
+}
+```
+
+**Error responses:**
+
+| Status | Kondisi | `errors` |
+|--------|---------|----------|
+| 401 | Email/password salah | `{ "attempts_remaining": 3 }` |
+| 423 | Akun dikunci (terlalu banyak percobaan gagal) | — |
+| 503 | Mode pemeliharaan (`APP_MAINTENANCE=true`) | — |
+
 **Validation:**
 - `email`: required, valid email
 - `password`: required, min 6 chars
+
+### POST /auth/verify-2fa
+
+Tahap kedua login ketika Two-Factor Authentication aktif.
+
+**Request:**
+```json
+{ "challenge_token": "eyJhbGciOiJIUzI1NiIs...", "code": "123456" }
+```
+
+**Response:** struktur sama dengan login sukses (`token`, `user`, `last_login`).
+
+### GET /auth/status
+
+**Publik.** Status sistem untuk halaman login (skeleton loading, banner
+pemeliharaan, versi & environment indicator).
+
+```json
+{
+  "success": true,
+  "data": {
+    "app_name": "Zi.CARE POS",
+    "version": "1.0.0",
+    "environment": "development",
+    "maintenance": false,
+    "two_factor_available": true
+  }
+}
+```
+
+### POST /auth/refresh
+
+**Headers:** Authorization required.
+
+**Request:** `{ "remember": true }`
+
+**Response:** `{ "token": "...", "expires_in": 28800, "user": { ... } }`
+
+Dipakai peringatan *session timeout* untuk memperpanjang sesi yang masih aktif.
+
+### POST /auth/forgot-password
+
+**Request:** `{ "email": "admin@pos.local" }`
+
+**Response:** selalu sukses (anti user-enumeration):
+
+```json
+{
+  "success": true,
+  "message": "Jika email terdaftar, kami telah membuat tautan reset password.",
+  "data": { "expires_in": 3600, "reset_token": "...", "reset_url": "..." }
+}
+```
+
+`reset_token`/`reset_url` hanya dikembalikan saat `APP_DEBUG=true` (tanpa
+server email). Tautan reset juga dicatat ke `LOG_PATH`.
+
+### POST /auth/reset-password
+
+**Request:** `{ "token": "<reset_token>", "password": "<password baru>" }`
+
+**Response:** `{ "success": true, "message": "Password berhasil diubah..." }`
+
+**Validation (422):** password minimal 8 karakter dan harus memuat huruf + angka.
+Token yang tidak valid/kedaluwarsa → `422` dengan pesan "Tautan reset tidak valid atau sudah kedaluwarsa".
+
+### POST /auth/2fa/setup
+
+**Headers:** Authorization required.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "secret": "GEZDGNBVGY3TQOJQ...",
+    "otpauth_url": "otpauth://totp/Zi.CARE%20POS%3Aadmin%40pos.local?...",
+    "issuer": "Zi.CARE POS"
+  }
+}
+```
+
+Membuat rahasia TOTP baru (belum aktif). Pindai `otpauth_url` di aplikasi
+authenticator (Google Authenticator, Authy, dll) atau masukkan `secret` manual.
+
+### POST /auth/2fa/enable
+
+**Headers:** Authorization required.
+
+**Request:** `{ "code": "123456" }` — kode TOTP yang valid untuk memverifikasi setup.
+
+### POST /auth/2fa/disable
+
+**Headers:** Authorization required.
+
+**Request:** `{ "code": "123456" }` — kode TOTP, **atau** password akun.
 
 ### POST /auth/logout
 
@@ -94,7 +231,7 @@ Content-Type: application/json
 
 ### GET /auth/me
 
-**Response:** Current user profile
+**Response:** Current user profile (termasuk `two_factor_enabled` dan `last_login_at`)
 
 ---
 

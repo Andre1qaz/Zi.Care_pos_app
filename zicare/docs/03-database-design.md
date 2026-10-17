@@ -36,6 +36,13 @@ erDiagram
         varchar password
         tinyint role_id FK
         tinyint is_active
+        int failed_login_attempts
+        datetime locked_until
+        datetime last_login_at
+        varchar last_login_ip
+        varchar last_login_user_agent
+        tinyint two_factor_enabled
+        varchar two_factor_secret
         datetime created_at
         datetime updated_at
     }
@@ -241,6 +248,7 @@ erDiagram
 | `004_partial_payment_system.sql` | Kolom pembayaran parsial + status `unpaid/overdue` |
 | `005_fix_user_passwords.sql` | Normalisasi hash password user |
 | `006_stock_movements.sql` | Tabel `stock_movements` (kartu stok) + saldo awal |
+| `007_auth_enhancements.sql` | Kolom keamanan login (`failed_login_attempts`, `locked_until`), info login terakhir (`last_login_*`), TOTP 2FA (`two_factor_*`), + tabel `password_reset_tokens` |
 
 See `database/migrations/` for executable SQL.
 

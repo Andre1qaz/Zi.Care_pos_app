@@ -21,11 +21,11 @@ class JwtHelper
         return $secret;
     }
 
-    public static function encode(array $payload): string
+    public static function encode(array $payload, ?int $expiry = null): string
     {
         $config = require BASE_PATH . '/app/config/config.php';
         $payload['iat'] = time();
-        $payload['exp'] = time() + $config['jwt']['expiry'];
+        $payload['exp'] = time() + ($expiry ?? $config['jwt']['expiry']);
 
         return JWT::encode($payload, self::secret(), 'HS256');
     }

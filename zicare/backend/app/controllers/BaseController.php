@@ -48,7 +48,8 @@ abstract class BaseController extends Injectable
 
         // Known/expected application errors expose their message to the caller.
         if ($e instanceof AppException) {
-            return ResponseHelper::error($e->getMessage(), $e->getStatusCode());
+            $errors = $e->getErrors();
+            return ResponseHelper::error($e->getMessage(), $e->getStatusCode(), $errors !== [] ? $errors : null);
         }
 
         // Unexpected errors: log full details, never leak internals to clients.

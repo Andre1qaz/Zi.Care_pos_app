@@ -46,8 +46,19 @@ class Application
 
             // Only skip auth for truly public auth routes.
             // /api/v1/auth/me must still require a valid token.
-            if (str_starts_with($path, '/api/v1/auth/login') || str_starts_with($path, '/api/v1/auth/logout')) {
-                return true;
+            $publicPaths = [
+                '/api/v1/auth/login',
+                '/api/v1/auth/logout',
+                '/api/v1/auth/status',
+                '/api/v1/auth/forgot-password',
+                '/api/v1/auth/reset-password',
+                '/api/v1/auth/verify-2fa',
+            ];
+
+            foreach ($publicPaths as $publicPath) {
+                if (str_starts_with($path, $publicPath)) {
+                    return true;
+                }
             }
 
             return $authMiddleware->call($this->app);
@@ -96,10 +107,17 @@ class Application
                 ? $exception->getMessage()
                 : 'Internal server error';
 
-            return \App\Helpers\ResponseHelper::json([
+            $errors = method_exists($exception, 'getErrors') ? $exception->getErrors() : [];
+
+            $payload = [
                 'success' => false,
                 'message' => $message,
-            ], $statusCode);
+            ];
+            if (!empty($errors)) {
+                $payload['errors'] = $errors;
+            }
+
+            return \App\Helpers\ResponseHelper::json($payload, $statusCode);
         });
     }
 

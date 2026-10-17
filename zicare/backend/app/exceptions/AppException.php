@@ -7,8 +7,9 @@ namespace App\Exceptions;
 class AppException extends \Exception
 {
     protected int $statusCode = 400;
+    protected array $errors = [];
 
-    public function __construct(string $message = '', ?int $statusCode = null)
+    public function __construct(string $message = '', ?int $statusCode = null, array $errors = [])
     {
         parent::__construct($message);
 
@@ -17,10 +18,20 @@ class AppException extends \Exception
         if ($statusCode !== null) {
             $this->statusCode = $statusCode;
         }
+
+        $this->errors = $errors;
     }
 
     public function getStatusCode(): int
     {
         return $this->statusCode;
+    }
+
+    /**
+     * Detail tambahan (mis. attempts_remaining) yang ikut dikirim ke klien.
+     */
+    public function getErrors(): array
+    {
+        return $this->errors;
     }
 }

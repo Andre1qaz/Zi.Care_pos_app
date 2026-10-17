@@ -67,6 +67,7 @@ $di->setShared('stockMovementRepository', fn () => new \App\Repositories\StockMo
 
 // Services
 $di->setShared('authService', fn () => new \App\Services\AuthService());
+$di->setShared('totpService', fn () => new \App\Services\TotpService());
 $di->setShared('productService', fn () => new \App\Services\ProductService());
 $di->setShared('categoryService', fn () => new \App\Services\CategoryService());
 $di->setShared('customerService', fn () => new \App\Services\CustomerService());
