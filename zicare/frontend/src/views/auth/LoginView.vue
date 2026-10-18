@@ -47,29 +47,29 @@
     </div>
 
     <!-- Login Card -->
-    <div class="relative mt-12 mb-8 grid w-full max-w-[2000px] min-h-[700px] overflow-hidden rounded-xl border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl lg:grid-cols-2">
+    <div class="relative mt-6 mb-4 grid w-full max-w-[1120px] min-h-[580px] overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-xl lg:grid-cols-2">
       <!-- Left Panel - Brand -->
-      <div class="hidden flex-col justify-between bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 p-16 text-white lg:flex">
+      <div class="hidden flex-col justify-between bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 p-12 text-white lg:flex">
         <div class="flex items-center gap-4">
-          <span class="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-lg">
+          <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg">
             <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-2" />
           </span>
           <div>
-            <p class="text-2xl font-bold">Zi.CARE</p>
-            <p class="text-base text-blue-100">Point of Sales</p>
+            <p class="text-lg font-semibold">Zi.CARE</p>
+            <p class="text-xs text-blue-100">Point of Sales</p>
           </div>
         </div>
 
         <div>
-          <h2 class="mb-6 text-5xl font-bold leading-tight">
+          <h2 class="mb-4 text-3xl font-semibold leading-tight">
             Kelola penjualan<br>dengan lebih <span class="text-yellow-300">{{ typedWord }}</span><span class="animate-pulse">|</span>
           </h2>
-          <p class="mb-10 max-w-md text-lg leading-relaxed text-blue-100">
-            Platform Point of Sales modern untuk transaksi cepat, invoice otomatis, dan laporan real-time. Tingkatkan efisiensi bisnis Anda sekarang.
+          <p class="mb-6 max-w-md text-sm leading-relaxed text-blue-100">
+            Platform Point of Sales modern untuk transaksi cepat, invoice otomatis, dan laporan real-time.
           </p>
 
           <!-- Feature Carousel -->
-          <div class="mb-10 overflow-hidden">
+          <div class="mb-6 overflow-hidden">
             <div
               class="flex transition-transform duration-500 ease-in-out"
               :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
@@ -79,21 +79,21 @@
                 :key="index"
                 class="min-w-full space-y-4"
               >
-                <div v-for="feature in slide" :key="feature" class="flex items-center gap-4">
-                  <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                    <Check class="h-4 w-4" />
+                <div v-for="feature in slide" :key="feature" class="flex items-center gap-3">
+                  <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+                    <Check class="h-3.5 w-3.5" />
                   </span>
-                  <span class="text-lg text-blue-50">{{ feature }}</span>
+                  <span class="text-sm text-blue-50">{{ feature }}</span>
                 </div>
               </div>
             </div>
             <!-- Carousel Indicators -->
-            <div class="mt-6 flex justify-center gap-3">
+            <div class="mt-4 flex justify-center gap-2">
               <button
                 v-for="(_, index) in featureSlides"
                 :key="index"
-                class="h-2.5 rounded-full transition-all"
-                :class="currentSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/40'"
+                class="h-2 rounded-full transition-all"
+                :class="currentSlide === index ? 'w-6 bg-white' : 'w-2 bg-white/40'"
                 :aria-label="`Tampilkan fitur ${index + 1}`"
                 @click="currentSlide = index"
               />
@@ -101,9 +101,9 @@
           </div>
 
           <!-- Running Text Features -->
-          <div class="overflow-hidden rounded-xl border border-white/20 bg-white/10 py-4 backdrop-blur-sm">
-            <div class="flex animate-marquee-smooth gap-10 whitespace-nowrap">
-              <span v-for="(f, i) in marqueeItems" :key="i" class="text-base text-white/90">{{ f }}</span>
+          <div class="overflow-hidden rounded-xl border border-white/20 bg-white/10 py-3 backdrop-blur-sm">
+            <div class="flex animate-marquee-smooth gap-8 whitespace-nowrap">
+              <span v-for="(f, i) in marqueeItems" :key="i" class="text-sm text-white/90">{{ f }}</span>
             </div>
           </div>
         </div>
@@ -112,35 +112,35 @@
       </div>
 
       <!-- Right Panel - Auth Form -->
-      <div class="relative flex flex-col justify-center bg-slate-800/80 p-8 backdrop-blur-sm sm:p-12 lg:p-16">
+      <div class="relative flex flex-col justify-center bg-slate-800/95 p-5 backdrop-blur-md sm:p-7 lg:p-10">
         <!-- Loading skeleton (async system status) -->
-        <div v-if="statusLoading" class="space-y-8" aria-hidden="true">
-          <div class="skeleton h-9 w-2/3"></div>
-          <div class="skeleton h-6 w-1/2"></div>
-          <div class="space-y-3">
-            <div class="skeleton h-5 w-20"></div>
-            <div class="skeleton h-14 w-full"></div>
+        <div v-if="statusLoading" class="space-y-6" aria-hidden="true">
+          <div class="skeleton h-8 w-2/3"></div>
+          <div class="skeleton h-5 w-1/2"></div>
+          <div class="space-y-2">
+            <div class="skeleton h-4 w-20"></div>
+            <div class="skeleton h-12 w-full rounded-xl"></div>
           </div>
-          <div class="space-y-3">
-            <div class="skeleton h-5 w-24"></div>
-            <div class="skeleton h-14 w-full"></div>
+          <div class="space-y-2">
+            <div class="skeleton h-4 w-24"></div>
+            <div class="skeleton h-12 w-full rounded-xl"></div>
           </div>
-          <div class="skeleton h-14 w-full"></div>
+          <div class="skeleton h-12 w-full rounded-xl"></div>
         </div>
 
         <template v-else>
           <!-- Mobile Logo -->
-          <div class="mb-8 text-center lg:hidden">
-            <div class="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-lg">
+          <div class="mb-4 text-center lg:hidden">
+            <div class="mb-1.5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-lg">
               <img src="@/assets/zicare-logo.jpg" alt="Zi.CARE Logo" class="h-full w-full object-contain p-2" />
             </div>
-            <h1 class="text-2xl font-bold text-white">Zi.CARE POS</h1>
+            <h1 class="text-base font-semibold text-white">Zi.CARE POS</h1>
           </div>
 
           <!-- Maintenance banner -->
           <div
             v-if="maintenance"
-            class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/15 px-5 py-4 text-sm text-amber-200"
+            class="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-3 text-sm text-amber-200"
             role="alert"
           >
             <ServerCrash class="mt-0.5 h-5 w-5 shrink-0" />
@@ -152,25 +152,24 @@
             <form
               v-if="step === 'login'"
               key="login"
-              class="space-y-6"
+              class="space-y-3"
               @submit.prevent="handleLogin"
               novalidate
             >
-              <div class="mb-6 hidden lg:block">
-                <h1 class="text-4xl font-bold text-white">{{ greeting }}</h1>
-                <p class="mt-3 text-lg text-slate-300">Masuk ke akun Anda untuk melanjutkan</p>
+              <div class="mb-2.5 hidden lg:block">
+                <h1 class="text-2xl font-semibold leading-tight text-white">{{ greeting }}</h1>
+                <p class="mt-0.5 text-sm text-slate-300">Masuk ke akun Anda untuk melanjutkan</p>
               </div>
 
               <!-- Email -->
               <div class="group">
-                <label for="email" class="mb-3 block text-base font-medium text-slate-300 transition-colors group-focus-within:text-blue-400">
+                <label for="email" class="mb-2 block text-sm font-medium text-slate-300 transition-colors group-focus-within:text-blue-400">
                   Email
                 </label>
                 <div class="relative">
-                  <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 transition-opacity group-focus-within:opacity-100" />
                   <div class="relative flex items-center">
-                    <div class="absolute left-4 flex items-center justify-center rounded-lg bg-slate-700/50 p-3 transition-colors group-focus-within:bg-blue-600/30 group-focus-within:text-blue-400">
-                      <Mail class="h-6 w-6 text-slate-400 transition-colors" />
+                    <div class="absolute left-3 flex items-center justify-center rounded-lg bg-slate-700/60 p-2 transition-colors group-focus-within:bg-blue-600/30 group-focus-within:text-blue-400">
+                      <Mail class="h-5 w-5 text-slate-400 transition-colors" />
                     </div>
                     <input
                       id="email"
@@ -182,10 +181,10 @@
                       aria-describedby="email-error"
                       :aria-invalid="emailHasError ? 'true' : 'false'"
                       placeholder="nama@klinik.com"
-                      class="min-h-[52px] w-full rounded-xl border-2 bg-slate-700/50 px-14 py-4 text-lg text-white placeholder-slate-400 transition-all duration-300 ease-smooth focus:shadow-lg focus:outline-none focus:ring-0"
+                      class="min-h-[48px] w-full rounded-xl border bg-slate-700/60 px-11 py-3 text-base text-white placeholder-slate-400 transition-all duration-200 ease-smooth focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0"
                       :class="[
-                        emailValid ? 'border-green-500 focus:border-green-500 focus:shadow-green-500/20' : '',
-                        emailHasError ? 'animate-shake border-red-500 focus:border-red-500 focus:shadow-red-500/20' : 'border-slate-600 focus:border-blue-500 focus:shadow-blue-500/20'
+                        emailValid ? 'border-green-500/80 focus:border-green-500 focus:ring-green-500/30' : '',
+                        emailHasError ? 'border-red-500/80 focus:border-red-500 focus:ring-red-500/30' : 'border-slate-600/80 focus:border-blue-500'
                       ]"
                       @blur="validateEmail"
                       @keyup.enter="focusPassword"
@@ -199,14 +198,13 @@
 
               <!-- Password -->
               <div class="group">
-                <label for="password" class="mb-3 block text-base font-medium text-slate-300 transition-colors group-focus-within:text-blue-400">
+                <label for="password" class="mb-2 block text-sm font-medium text-slate-300 transition-colors group-focus-within:text-blue-400">
                   Password
                 </label>
                 <div class="relative">
-                  <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 transition-opacity group-focus-within:opacity-100" />
                   <div class="relative flex items-center">
-                    <div class="absolute left-4 flex items-center justify-center rounded-lg bg-slate-700/50 p-3 transition-colors group-focus-within:bg-blue-600/30 group-focus-within:text-blue-400">
-                      <Lock class="h-6 w-6 text-slate-400 transition-colors" />
+                    <div class="absolute left-3 flex items-center justify-center rounded-lg bg-slate-700/60 p-2 transition-colors group-focus-within:bg-blue-600/30 group-focus-within:text-blue-400">
+                      <Lock class="h-5 w-5 text-slate-400 transition-colors" />
                     </div>
                     <input
                       id="password"
@@ -218,10 +216,10 @@
                       aria-describedby="password-error"
                       :aria-invalid="passwordHasError ? 'true' : 'false'"
                       placeholder="••••••••"
-                      class="min-h-[52px] w-full rounded-xl border-2 bg-slate-700/50 px-14 py-4 text-lg text-white placeholder-slate-400 transition-all duration-300 ease-smooth focus:shadow-lg focus:outline-none focus:ring-0"
+                      class="min-h-[48px] w-full rounded-xl border bg-slate-700/60 px-11 py-3 text-base text-white placeholder-slate-400 transition-all duration-200 ease-smooth focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0"
                       :class="[
-                        passwordValid ? 'border-green-500 focus:border-green-500 focus:shadow-green-500/20' : '',
-                        passwordHasError ? 'animate-shake border-red-500 focus:border-red-500 focus:shadow-red-500/20' : 'border-slate-600 focus:border-blue-500 focus:shadow-blue-500/20'
+                        passwordValid ? 'border-green-500/80 focus:border-green-500 focus:ring-green-500/30' : '',
+                        passwordHasError ? 'border-red-500/80 focus:border-red-500 focus:ring-red-500/30' : 'border-slate-600/80 focus:border-blue-500'
                       ]"
                       @blur="validatePassword"
                       @keyup="checkCapsLock"
@@ -230,11 +228,11 @@
                     />
                     <button
                       type="button"
-                      class="absolute right-4 flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition-all duration-300 ease-smooth hover:bg-slate-600/50 hover:text-slate-200 active:scale-95"
+                      class="absolute right-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 ease-smooth hover:bg-slate-600/60 hover:text-slate-200 active:scale-95"
                       :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
                       @click="showPassword = !showPassword"
                     >
-                      <component :is="showPassword ? EyeOff : Eye" class="h-6 w-6" />
+                      <component :is="showPassword ? EyeOff : Eye" class="h-5 w-5" />
                     </button>
                   </div>
 
@@ -262,17 +260,17 @@
 
               <!-- Remember me / Forgot password -->
               <div class="flex items-center justify-between gap-3">
-                <label class="flex min-h-[44px] cursor-pointer items-center gap-2">
+                <label class="flex min-h-[40px] cursor-pointer items-center gap-2">
                   <input
                     v-model="rememberMe"
                     type="checkbox"
-                    class="h-5 w-5 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                    class="h-4 w-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-0"
                   />
                   <span class="text-sm text-slate-300">Ingat saya</span>
                 </label>
                 <button
                   type="button"
-                  class="min-h-[44px] rounded-lg px-2 text-sm font-medium text-blue-400 transition-colors ease-smooth hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  class="min-h-[40px] rounded-lg px-2 text-sm font-medium text-blue-400 transition-colors ease-smooth hover:text-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                   @click="goToForgot"
                 >
                   Lupa password?
@@ -308,18 +306,17 @@
 
               <button
                 type="submit"
-                class="group relative min-h-[52px] w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-lg font-medium text-white transition-all duration-300 ease-smooth hover:from-blue-600 hover:to-blue-700 hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:from-blue-500 disabled:hover:to-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+                class="group relative min-h-[48px] w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-base font-medium text-white transition-all duration-200 ease-smooth hover:from-blue-600 hover:to-blue-700 hover:shadow-lg hover:shadow-blue-500/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:from-blue-500 disabled:hover:to-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
                 :disabled="loading"
               >
-                <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shimmer" />
-                <span v-if="loading" class="flex items-center justify-center gap-3">
-                  <svg class="h-6 w-6 animate-spin" viewBox="0 0 24 24">
+                <span v-if="loading" class="flex items-center justify-center gap-2">
+                  <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Memproses...
                 </span>
-                <span v-else class="flex items-center justify-center gap-3">
+                <span v-else class="flex items-center justify-center gap-2">
                   Masuk
                   <ArrowRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </span>
@@ -330,7 +327,7 @@
             <form
               v-else-if="step === '2fa'"
               key="2fa"
-              class="space-y-6"
+              class="space-y-4"
               @submit.prevent="submitOtp"
               novalidate
             >
@@ -343,17 +340,17 @@
               </button>
 
               <div class="text-center">
-                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
-                  <Smartphone class="h-8 w-8" />
+                <div class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-300">
+                  <Smartphone class="h-6 w-6" />
                 </div>
-                <h2 class="text-2xl font-bold text-white">Verifikasi Dua Langkah</h2>
+                <h2 class="text-lg font-semibold text-white">Verifikasi Dua Langkah</h2>
                 <p class="mt-2 text-sm text-slate-300">
-                  Masukkan kode 6 digit dari aplikasi authenticator Anda (Google Authenticator, Authy, dsb).
+                  Masukkan kode 6 digit dari aplikasi authenticator Anda.
                 </p>
               </div>
 
               <div>
-                <label for="otp" class="mb-3 block text-base font-medium text-slate-300">Kode 2FA</label>
+                <label for="otp" class="mb-2 block text-sm font-medium text-slate-300">Kode 2FA</label>
                 <input
                   id="otp"
                   ref="otpInput"
@@ -377,7 +374,7 @@
 
               <button
                 type="submit"
-                class="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-lg font-medium text-white transition-all duration-300 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-base font-medium text-white transition-all duration-200 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="otpLoading || otpCode.length !== 6"
               >
                 <Loader2 v-if="otpLoading" class="h-5 w-5 animate-spin" />
@@ -390,7 +387,7 @@
             <form
               v-else-if="step === 'forgot'"
               key="forgot"
-              class="space-y-6"
+              class="space-y-4"
               @submit.prevent="submitForgot"
               novalidate
             >
@@ -403,14 +400,14 @@
               </button>
 
               <div>
-                <h2 class="text-3xl font-bold text-white">Lupa Password</h2>
+                <h2 class="text-2xl font-semibold text-white">Lupa Password</h2>
                 <p class="mt-2 text-sm text-slate-300">
                   Masukkan email akun Anda. Kami akan membuat tautan untuk mengatur ulang password.
                 </p>
               </div>
 
               <div>
-                <label for="reset-email" class="mb-3 block text-base font-medium text-slate-300">Email</label>
+                <label for="reset-email" class="mb-2 block text-sm font-medium text-slate-300">Email</label>
                 <div class="relative flex items-center">
                   <div class="absolute left-4 rounded-lg bg-slate-700/50 p-3">
                     <Mail class="h-6 w-6 text-slate-400" />
@@ -424,7 +421,7 @@
                     autocomplete="email"
                     aria-label="Alamat email akun"
                     placeholder="nama@klinik.com"
-                    class="min-h-[52px] w-full rounded-xl border-2 border-slate-600 bg-slate-700/50 px-14 py-4 text-lg text-white placeholder-slate-400 transition-all duration-300 ease-smooth focus:border-blue-500 focus:outline-none"
+                    class="min-h-[48px] w-full rounded-xl border border-slate-600/80 bg-slate-700/60 px-11 py-3 text-base text-white placeholder-slate-400 transition-all duration-200 ease-smooth focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   />
                 </div>
               </div>
@@ -432,7 +429,7 @@
               <transition name="fade">
                 <div
                   v-if="forgotError"
-                  class="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/20 px-5 py-4 text-base text-red-300"
+                  class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/20 px-4 py-3 text-sm text-red-300"
                   role="alert"
                 >
                   <AlertCircle class="h-5 w-5 shrink-0" /> {{ forgotError }}
@@ -442,7 +439,7 @@
               <transition name="fade">
                 <div
                   v-if="forgotSent"
-                  class="space-y-3 rounded-lg border border-green-500/30 bg-green-500/15 px-5 py-4 text-base text-green-200"
+                  class="space-y-3 rounded-xl border border-green-500/30 bg-green-500/15 px-4 py-3 text-sm text-green-200"
                   role="status"
                 >
                   <div class="flex items-center gap-3">
@@ -477,7 +474,7 @@
               <button
                 v-if="!forgotSent"
                 type="submit"
-                class="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-lg font-medium text-white transition-all duration-300 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-base font-medium text-white transition-all duration-200 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="forgotLoading"
               >
                 <Loader2 v-if="forgotLoading" class="h-5 w-5 animate-spin" />
@@ -490,7 +487,7 @@
             <form
               v-else-if="step === 'reset'"
               key="reset"
-              class="space-y-6"
+              class="space-y-4"
               @submit.prevent="submitReset"
               novalidate
             >
@@ -503,12 +500,12 @@
               </button>
 
               <div>
-                <h2 class="text-3xl font-bold text-white">Atur Ulang Password</h2>
+                <h2 class="text-2xl font-semibold text-white">Atur Ulang Password</h2>
                 <p class="mt-2 text-sm text-slate-300">Buat password baru yang kuat untuk akun Anda.</p>
               </div>
 
               <div>
-                <label for="new-password" class="mb-3 block text-base font-medium text-slate-300">Password Baru</label>
+                <label for="new-password" class="mb-2 block text-sm font-medium text-slate-300">Password Baru</label>
                 <div class="relative flex items-center">
                   <div class="absolute left-4 rounded-lg bg-slate-700/50 p-3">
                     <KeyRound class="h-6 w-6 text-slate-400" />
@@ -522,11 +519,11 @@
                     autocomplete="new-password"
                     aria-label="Password baru"
                     placeholder="••••••••"
-                    class="min-h-[52px] w-full rounded-xl border-2 border-slate-600 bg-slate-700/50 px-14 py-4 text-lg text-white placeholder-slate-400 transition-all duration-300 ease-smooth focus:border-blue-500 focus:outline-none"
+                    class="min-h-[48px] w-full rounded-xl border border-slate-600/80 bg-slate-700/60 px-11 py-3 text-base text-white placeholder-slate-400 transition-all duration-200 ease-smooth focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                   />
                   <button
                     type="button"
-                    class="absolute right-4 flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition-all duration-300 ease-smooth hover:bg-slate-600/50 hover:text-slate-200"
+                    class="absolute right-2 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-all duration-200 ease-smooth hover:bg-slate-600/60 hover:text-slate-200"
                     :aria-label="showNewPassword ? 'Sembunyikan password' : 'Tampilkan password'"
                     @click="showNewPassword = !showNewPassword"
                   >
@@ -544,7 +541,7 @@
               </div>
 
               <div>
-                <label for="confirm-password" class="mb-3 block text-base font-medium text-slate-300">Konfirmasi Password</label>
+                <label for="confirm-password" class="mb-2 block text-sm font-medium text-slate-300">Konfirmasi Password</label>
                 <div class="relative flex items-center">
                   <div class="absolute left-4 rounded-lg bg-slate-700/50 p-3">
                     <Lock class="h-6 w-6 text-slate-400" />
@@ -557,10 +554,10 @@
                     autocomplete="new-password"
                     aria-label="Konfirmasi password baru"
                     placeholder="••••••••"
-                    class="min-h-[52px] w-full rounded-xl border-2 px-14 py-4 text-lg text-white placeholder-slate-400 transition-all duration-300 ease-smooth focus:outline-none"
+                    class="min-h-[48px] w-full rounded-xl border px-11 py-3 text-base text-white placeholder-slate-400 transition-all duration-200 ease-smooth focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                     :class="confirmPassword && confirmPassword !== newPassword
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-slate-600 focus:border-blue-500'"
+                      ? 'border-red-500/80 focus:border-red-500 focus:ring-red-500/30'
+                      : 'border-slate-600/80 focus:border-blue-500'"
                   />
                 </div>
                 <transition name="fade">
@@ -573,7 +570,7 @@
               <transition name="fade">
                 <div
                   v-if="resetError"
-                  class="flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/20 px-5 py-4 text-base text-red-300"
+                  class="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/20 px-4 py-3 text-sm text-red-300"
                   role="alert"
                 >
                   <AlertCircle class="h-5 w-5 shrink-0" /> {{ resetError }}
@@ -582,7 +579,7 @@
 
               <button
                 type="submit"
-                class="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 text-lg font-medium text-white transition-all duration-300 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-base font-medium text-white transition-all duration-200 ease-smooth hover:from-blue-600 hover:to-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="resetLoading || !resetFormValid"
               >
                 <Loader2 v-if="resetLoading" class="h-5 w-5 animate-spin" />
@@ -592,19 +589,19 @@
             </form>
 
             <!-- ============================== SUCCESS ============================== -->
-            <div v-else-if="step === 'success'" key="success" class="space-y-6 text-center">
-              <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-green-500/20">
-                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/40 animate-success-pop">
-                  <Check class="h-9 w-9 text-white" />
+            <div v-else-if="step === 'success'" key="success" class="space-y-4 text-center">
+              <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
+                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 animate-success-pop">
+                  <Check class="h-8 w-8 text-white" />
                 </div>
               </div>
               <div>
-                <h2 class="text-3xl font-bold text-white">Login Berhasil!</h2>
-                <p class="mt-2 text-lg text-slate-300">Selamat datang, {{ successInfo?.user?.name || 'Pengguna' }} 👋</p>
+                <h2 class="text-2xl font-semibold text-white">Login Berhasil!</h2>
+                <p class="mt-2 text-base text-slate-300">Selamat datang, {{ successInfo?.user?.name || 'Pengguna' }} 👋</p>
               </div>
 
               <!-- Last login info -->
-              <div class="mx-auto max-w-sm rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-left text-sm">
+              <div class="mx-auto max-w-sm rounded-xl border border-white/10 bg-slate-900/60 p-3 text-left text-sm">
                 <div class="mb-1 flex items-center gap-2 text-slate-400">
                   <Clock class="h-4 w-4" />
                   <span class="font-semibold uppercase tracking-wide text-xs">Login Terakhir</span>
@@ -630,8 +627,8 @@
         </template>
 
         <!-- Footer: version + support -->
-        <div class="mt-10 space-y-3 text-center">
-          <p class="text-base text-slate-400">
+        <div class="mt-6 space-y-1.5 text-center">
+          <p class="text-sm text-slate-400">
             Butuh bantuan?
             <a
               href="https://wa.me/6282284630001?text=Halo%20admin%2C%20saya%20butuh%20bantuan%20dengan%20sistem%20POS"
